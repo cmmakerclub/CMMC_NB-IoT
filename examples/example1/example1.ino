@@ -9,8 +9,9 @@ void setup()
 { 
   Serial.begin(57600);
   nbSerial.begin(9600); 
-  Serial.setTimeout(2);
+  Serial.setTimeout(4);
   nbSerial.setTimeout(6);
+  Serial.println("Starting application...");
 
   nb.onDeviceReboot([]() {
     Serial.println("Device being rebooted."); 
