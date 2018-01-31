@@ -1,15 +1,19 @@
 #include <Arduino.h>
+#include <AltSoftSerial.h>
 #include <CMMC_NB_IoT.h> 
 
-CMMC_NB_IoT nb; 
+AltSoftSerial nbSerial;
+CMMC_NB_IoT nb(&nbSerial); 
 
 void setup()
 { 
   Serial.begin(57600);
-  nb.init();
+  nbSerial.begin(9600); 
+  Serial.setTimeout(2);
+  nbSerial.setTimeout(6);
 
-  nb.onDeviceRestart([]() {
-    Serial.println("Device is restarting..."); 
+  nb.onDeviceReboot([]() {
+    Serial.println("Device being rebooted."); 
   });
 
   nb.onDeviceReady([](CMMC_NB_IoT::DeviceInfo device) {
@@ -20,6 +24,8 @@ void setup()
     Serial.print(F("# IMSI SIM-->  "));
     Serial.println(device.imsi); 
   });
+
+  nb.init(); 
 }
 
 void loop()
