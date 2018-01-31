@@ -10,25 +10,44 @@ void setup()
   nbSerial.begin(9600);
   Serial.println("CMMC AT-Bridge started.");
   Serial.println("BC-95 is using only CR for line ending.");
+  Serial.setTimeout(2);
+  nbSerial.setTimeout(6);
 }
 
+String input;
+uint8_t hexMode = 0;
 void loop()
 { 
   if (Serial.available()) {
     Serial.print(">> ");
-    String input = "";
-    while (Serial.available() > 0)  {
-      char c = Serial.read();
-      input += c;
-      delay(2);
+    input = Serial.readString();
+    input.trim();
+    input.toUpperCase();
+    Serial.println(input);
+    if (input == "HEX") {
+        Serial.println("HEX MODE ENABLED.");
+        hexMode = 1; 
     }
-    Serial.print(input);
+    else if (input == "ASCII") {
+        Serial.println("HEX MODE DISABLED.");
+        hexMode = 0; 
+    }
     nbSerial.write(input.c_str(), input.length());
+    nbSerial.write('\r');
   }
 
-  while (nbSerial.available() > 0)  {
-    char c =  char(nbSerial.read());
-    Serial.print(c);
-    delay(2);
+  while(nbSerial.available() > 0)  {
+      String response = nbSerial.readString(); 
+      if (hexMode == 1) { 
+        char buf[3];
+        Serial.print("+");
+        for(int i =0 ;i < response.length()-1; i++) {
+            sprintf(buf, "%02x", response[i]);
+            Serial.print(buf);
+        }
+        Serial.println("-");
+      }
+      response.trim();
+      Serial.println(response);
   }
 }
