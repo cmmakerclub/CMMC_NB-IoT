@@ -39,7 +39,7 @@ void loop()
   while(nbSerial.available() > 0)  {
       String response = nbSerial.readString(); 
       if (hexMode == 1) { 
-        char buf[3];
+        static char buf[3];
         Serial.print("+");
         for(int i =0 ;i < response.length()-1; i++) {
             sprintf(buf, "%02x", response[i]);
