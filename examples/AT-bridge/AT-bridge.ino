@@ -8,8 +8,7 @@ void setup()
 { 
   Serial.begin(57600);
   nbSerial.begin(9600);
-  Serial.println("CMMC AT-Bridge started.");
-  Serial.println("BC-95 is using only CR for line ending.");
+  Serial.println("Chiang Mai Maker Club's AT-Bridge engine is started.");
   Serial.setTimeout(2);
   nbSerial.setTimeout(6);
 }
