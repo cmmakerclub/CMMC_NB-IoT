@@ -35,7 +35,7 @@ void loop()
     nbSerial.write('\r');
   }
 
-  while(nbSerial.available() > 0)  {
+  if (nbSerial.available() > 0)  {
       String response = nbSerial.readString(); 
       if (hexMode == 1) { 
         static char buf[3];
