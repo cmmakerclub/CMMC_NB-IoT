@@ -24,22 +24,27 @@ class CMMC_NB_IoT
     ~CMMC_NB_IoT() {};
 
     void init() {
+      String buf;
       _writeCommand("AT", 5000);
       _writeCommand("AT+NRB", 10L * 1000);
+      _writeCommand("AT+CGSN=1", 10L * 1000, &buf); 
+
+      // Serial.println(buf);
+
       _writeCommand("AT+CFUN=1", 10L * 1000);
       _writeCommand("AT+NCONFIG=AUTOCONNECT,TRUE", 10L * 1000);
       _writeCommand("AT+CGATT=1", 10L * 1000);
       while (1) {
         String s = "";
-        _writeCommand("AT+CGATT?", 10L * 1000, &s);
+        _writeCommand("AT+CGATT?", 10L * 1000, &s, 1);
         if (s.indexOf(F("+CGATT:1")) != -1) {
           Serial.println("NB-IoT Network Connected.");
           break;
         }
         else {
-          Serial.println("Connecting NB-IoT Network...");
+          Serial.println(String("[") + millis() + "] Connecting NB-IoT Network...");
         }
-        delay(2000);
+        delay(1000);
       }
     }
 
@@ -57,8 +62,10 @@ class CMMC_NB_IoT
     deviceInfoCb_t _user_onDeviceReady_cb;
     Stream *_Serial;
 
-    uint32_t _writeCommand(String at, uint32_t timeoutMs, String *s = NULL) {
-      Serial.print(String("requesting => ") + at);
+    uint32_t _writeCommand(String at, uint32_t timeoutMs, String *s = NULL, bool silent = false) {
+      if (!silent) {
+        Serial.print(String("requesting => ") + at); 
+      }
       bool reqSuccess = 0;
       at.trim();
       this->_Serial->write(at.c_str(), at.length());
@@ -75,7 +82,9 @@ class CMMC_NB_IoT
           buffer += response;
           if (response.indexOf(F("OK")) != -1) {
             // Serial.print(String("+++") + response);
-            Serial.println(String(" took ") + String(millis() - startMs) + "ms");
+            if (!silent) {
+              Serial.println(String(" took ") + String(millis() - startMs) + "ms"); 
+            }
             reqSuccess = 1;
             *s = buffer;
             break;
