@@ -20,9 +20,9 @@ void setup()
   Serial.println();
   Serial.println(F("Starting application..."));
 
-  // nb.onDeviceReboot([]() {
-  //   Serial.println("Device being rebooted."); 
-  // });
+  nb.onDeviceReboot([]() {
+    Serial.println("Device being rebooted."); 
+  });
 
   nb.onDeviceReady([](CMMC_NB_IoT::DeviceInfo device) {
     Serial.print(F("# Module IMEI-->  "));
