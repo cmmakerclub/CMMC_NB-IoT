@@ -31,10 +31,19 @@ void setup()
     Serial.println(device.firmware);
     Serial.print(F("# IMSI SIM-->  "));
     Serial.println(device.imsi); 
+  }); 
+
+  nb.onConnecting([]() {
+    Serial.println("[user] Connecting to NB-IoT Network...");
+    delay(1000);
+  });
+
+  nb.onConnected([]() {
+    Serial.println("[user] NB-IoT Networ connected");
   });
 
   nb.onDebugMsg([](const char* msg) {
-    Serial.print(msg);
+    // Serial.print(msg);
   });
 
   nb.init(); 

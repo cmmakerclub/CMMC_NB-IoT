@@ -27,6 +27,8 @@ class CMMC_NB_IoT
       this->_Serial = s;
       this->_user_debug_cb = [](const char* s) { };
       this->_user_onDeviceReboot_cb = [](void) -> void { };
+      this->_user_onConnecting_cb = [](void) -> void { };
+      this->_user_onConnected_cb = [](void) -> void { };
       this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
     };
     ~CMMC_NB_IoT() {};
@@ -54,18 +56,31 @@ class CMMC_NB_IoT
         String ss = String(buf);
         if (ss.indexOf(F("+CGATT:1")) != -1) {
           USER_DEBUG_PRINTF("%s\n", String("NB-IoT Network Connected.").c_str()); 
+          if (this->_user_onConnected_cb) {
+            this->_user_onConnected_cb(); 
+          } 
           break;
         }
         else {
           String out = String("[") + millis() + "] Connecting NB-IoT Network...";
           USER_DEBUG_PRINTF("%s\n", out.c_str()); 
+          if (this->_user_onConnecting_cb) {
+            this->_user_onConnecting_cb(); 
+          }
         }
-        delay(1000);
       }
     }
 
     void onDeviceReady(deviceInfoCb_t cb) {
       this->_user_onDeviceReady_cb = cb; 
+    }
+
+    void onConnecting(voidCb_t cb) {
+      this->_user_onConnecting_cb = cb; 
+    }
+
+    void onConnected(voidCb_t cb) {
+      this->_user_onConnected_cb = cb; 
     }
 
     void onDeviceReboot(voidCb_t cb) {
@@ -78,6 +93,8 @@ class CMMC_NB_IoT
     char debug_buffer[60];
     deviceInfoCb_t _user_onDeviceReady_cb;
     voidCb_t _user_onDeviceReboot_cb;
+    voidCb_t _user_onConnecting_cb;
+    voidCb_t _user_onConnected_cb;
     Stream *_Serial;
 
     uint32_t _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false) {
