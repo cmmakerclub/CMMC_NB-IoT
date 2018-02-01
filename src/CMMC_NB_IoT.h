@@ -7,6 +7,12 @@
 typedef void (*debugCb_t)(const char* msg);
 typedef void (*voidCb_t)(void);
 
+#define USER_DEBUG_PRINTF(fmt, args...) { \
+    sprintf(this->debug_buffer, fmt, ## args); \
+    _user_debug_cb(this->debug_buffer); \
+  }
+
+
 class CMMC_NB_IoT
 {
   public:
@@ -22,35 +28,37 @@ class CMMC_NB_IoT
       this->_user_debug_cb = [](const char* s) { };
       this->_user_onDeviceReboot_cb = [](void) -> void { };
       this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
-
     };
     ~CMMC_NB_IoT() {};
 
+    void onDebugMsg(debugCb_t cb) {
+        this->_user_debug_cb = cb;
+    }
+
     void init() {
-      char buf[100];
       _writeCommand(F("AT"), 5L*1000);
-      _writeCommand(("AT+NRB"), 10L * 1000);
-      _writeCommand("AT+CIMI", 10L * 1000);  // imsi sim
-      strcpy(this->deviceInfo.imsi, buf);
-      _writeCommand(F("AT+CGSN=1"), 10L * 1000, buf);  // IMEI
-      strcpy(this->deviceInfo.imei, buf);
-      Serial.println(buf);
-      _writeCommand(F("AT+CGMR"), 10L * 1000, buf);  // firmware
-      strcpy(this->deviceInfo.firmware, buf);
+      this->_user_onDeviceReboot_cb();
+      _writeCommand(F("AT+NRB"), 10L * 1000); 
       _writeCommand(F("AT+CFUN=1"), 10L * 1000);
-      // _writeCommand(F("AT+NCONFIG=AUTOCONNECT,TRUE"), 10L * 1000);
+      _writeCommand(F("AT+CGSN=1"), 10L * 1000, this->deviceInfo.imei);  // IMEI
+      _writeCommand(F("AT+CGMR"), 10L * 1000, this->deviceInfo.firmware);  // firmware
+      _writeCommand(F("AT+CIMI"), 10L * 1000, this->deviceInfo.imsi);  // imsi sim
+
       this->_user_onDeviceReady_cb(this->deviceInfo);
+      _writeCommand(F("AT+NCONFIG=AUTOCONNECT,TRUE"), 10L * 1000);
       _writeCommand(F("AT+CGATT=1"), 10L * 1000);
+      char buf[20];
       while (1) {
         String s;
-        _writeCommand("AT+CGATT?", 10L * 1000, buf, 1);
+        _writeCommand(F("AT+CGATT?"), 10L * 1000, buf, 1);
         String ss = String(buf);
         if (ss.indexOf(F("+CGATT:1")) != -1) {
-          Serial.println("NB-IoT Network Connected.");
+          USER_DEBUG_PRINTF("%s\n", String("NB-IoT Network Connected.").c_str()); 
           break;
         }
         else {
-          Serial.println(String("[") + millis() + "] Connecting NB-IoT Network...");
+          String out = String("[") + millis() + "] Connecting NB-IoT Network...";
+          USER_DEBUG_PRINTF("%s\n", out.c_str()); 
         }
         delay(1000);
       }
@@ -67,6 +75,7 @@ class CMMC_NB_IoT
   private:
     DeviceInfo deviceInfo;
     debugCb_t _user_debug_cb;
+    char debug_buffer[60];
     deviceInfoCb_t _user_onDeviceReady_cb;
     voidCb_t _user_onDeviceReboot_cb;
     Stream *_Serial;
@@ -75,12 +84,14 @@ class CMMC_NB_IoT
       uint32_t startMs = millis();
       timeoutMs = startMs + timeoutMs;
       if (!silent) {
-        Serial.print(F("requesting => ")); 
-        Serial.print(at);
-        // Serial.print(F(" start: "));
-        // Serial.print(startMs);
-        // Serial.print(F(" timeout: "));
-        // Serial.print(timeoutMs);
+        USER_DEBUG_PRINTF("%s", at.c_str());
+        // Serial.print(F("requesting => ")); 
+        /*
+        Serial.print(F(" start: "));
+        Serial.print(startMs);
+        Serial.print(F(" timeout: "));
+        Serial.print(timeoutMs);
+        */
       }
       bool reqSuccess = 0;
       at.trim();
@@ -88,19 +99,16 @@ class CMMC_NB_IoT
       this->_Serial->write('\r');
       String nbSerialBuffer;
       while (1) {
-        // if (millis() % 1000 == 0) 
-          // Serial.println("wait nb rx.. ");
         if (this->_Serial->available()) {
           String response = this->_Serial->readStringUntil('\n');
           response.trim();
           nbSerialBuffer += response;
           if (response.indexOf(F("OK")) != -1) {
-            // Serial.print(String("+++") + nbSerialBuffer);
             if (!silent) {
-              Serial.println(String(F(" (")) + String(millis() - startMs) + F("ms)")); 
+              String out = String(F(" (")) + String(millis() - startMs) + F("ms)");
+              USER_DEBUG_PRINTF("%s\n", out.c_str());
             }
             reqSuccess = 1;
-            // *s = nbSerialBuffer;
             if (s!= NULL) {
               strcpy(s, nbSerialBuffer.c_str()); 
             }
@@ -108,20 +116,13 @@ class CMMC_NB_IoT
           }
         } else if ((millis() > timeoutMs) ) {
           reqSuccess = 0;
-          Serial.println("wait timeout");
-          Serial.print(millis());
-          Serial.print(" ");
-          Serial.println(timeoutMs);
+          USER_DEBUG_PRINTF("wait timeout at %lu/%lu\n", millis(), timeoutMs);
           break;
         }
         delay(2);
       }
-
       return reqSuccess;
     }
-
-
-    // on_device_ready;
 };
 
 #endif //CMMC_NB_IoT_H

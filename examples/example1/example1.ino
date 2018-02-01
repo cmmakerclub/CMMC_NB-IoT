@@ -9,7 +9,6 @@ void setup()
   Serial.begin(57600);
   Serial2.begin(9600); 
   Serial.setTimeout(4);
-
   // nbSerial.begin(9600); 
   // nbSerial.setTimeout(6);
   Serial2.setTimeout(6);
@@ -21,16 +20,21 @@ void setup()
   Serial.println(F("Starting application..."));
 
   nb.onDeviceReboot([]() {
-    Serial.println("Device being rebooted."); 
+    Serial.println(F("[user] Device being rebooted.")); 
   });
 
   nb.onDeviceReady([](CMMC_NB_IoT::DeviceInfo device) {
+    Serial.println("[user] Device Ready!");
     Serial.print(F("# Module IMEI-->  "));
     Serial.println(device.imei);
     Serial.print(F("# Firmware ver-->  "));
     Serial.println(device.firmware);
     Serial.print(F("# IMSI SIM-->  "));
     Serial.println(device.imsi); 
+  });
+
+  nb.onDebugMsg([](const char* msg) {
+    Serial.print(msg);
   });
 
   nb.init(); 
