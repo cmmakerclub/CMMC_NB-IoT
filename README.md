@@ -1,7 +1,6 @@
 # CMMC_NB-IoT  [![Build Status](https://travis-ci.org/cmmakerclub/CMMC_NB-IoT.svg?branch=master)](https://travis-ci.org/cmmakerclub/CMMC_NB-IoT)
 
     #include <CMMC_NB_IoT.h>
-
     CMMC_NB_IoT nb(&Serial2);
     
     nb.onDeviceReboot([]() {
@@ -24,14 +23,14 @@
     });
 
     nb.onConnected([]() {
-      Serial.println("[user] NB-IoT Networ connected");
+        Serial.println("[user] NB-IoT Networ connected");
     });
     
-      nb.onDebugMsg([](const char* msg) {
+    nb.onDebugMsg([](const char* msg) {
         // Serial.print(msg);
-      });
+    });
 
-      nb.init();
+    nb.init();
     
 [Example Code](https://github.com/cmmakerclub/CMMC_NB-IoT/blob/master/examples/example1/example1.ino)
 
