@@ -2,16 +2,17 @@
 #include <CMMC_NB_IoT.h> 
 #include <AltSoftSerial.h>
 
-CMMC_NB_IoT nb(&Serial2);
+AltSoftSerial nbSerial;
+CMMC_NB_IoT nb(&nbSerial);
 
 void setup()
 {
   Serial.begin(57600);
-  Serial2.begin(9600);
   Serial.setTimeout(4);
-  // nbSerial.begin(9600);
-  // nbSerial.setTimeout(6);
-  Serial2.setTimeout(6);
+
+  nbSerial.begin(9600);
+  nbSerial.setTimeout(6);
+  
   delay(10);
   while (!Serial) {
     ; // wait for serial port to connect. Needed for native USB
@@ -39,7 +40,7 @@ void setup()
   });
 
   nb.onConnected([]() {
-    Serial.println("[user] NB-IoT Networ connected");
+    Serial.println("[user] NB-IoT Network connected");
   });
 
   nb.onDebugMsg([](const char* msg) {
