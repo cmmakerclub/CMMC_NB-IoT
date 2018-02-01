@@ -19,6 +19,7 @@ python:
 
 env:
     - PLATFORMIO_CI_SRC=examples/AT-bridge
+    - PLATFORMIO_CI_SRC=examples/example1
 
 install:
     - pip install -U platformio

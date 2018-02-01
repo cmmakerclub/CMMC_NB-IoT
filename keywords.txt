@@ -1,5 +1,5 @@
 #######################################
-# Syntax Coloring Map For Wire
+# Syntax Coloring Map For CMMC_NB-IoT
 #######################################
 
 #######################################
@@ -17,7 +17,3 @@
 #######################################
 # Constants (LITERAL1)
 #######################################
-
-MODE_BOTH	LITERAL1
-MODE_PUB_ONLY	LITERAL1
-MODE_PUB_ONLY	LITERAL1
