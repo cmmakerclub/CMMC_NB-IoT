@@ -31,6 +31,10 @@
     });
 
     nb.init();
+    void loop()
+    {
+
+    }
     
 [Example Code](https://github.com/cmmakerclub/CMMC_NB-IoT/blob/master/examples/example1/example1.ino)
 
