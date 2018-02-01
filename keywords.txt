@@ -18,6 +18,6 @@
 # Constants (LITERAL1)
 #######################################
 
-MODE_BOTH             LITERAL1
-MODE_PUB_ONLY         LITERAL1
-MODE_PUB_ONLY         LITERAL1
+MODE_BOTH	LITERAL1
+MODE_PUB_ONLY	LITERAL1
+MODE_PUB_ONLY	LITERAL1
