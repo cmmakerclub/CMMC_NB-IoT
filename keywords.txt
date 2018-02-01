@@ -9,6 +9,11 @@
 #######################################
 # Methods and Functions (KEYWORD2)
 #######################################
+onDeviceReady	KEYWORD2
+onDeviceReboot	KEYWORD2
+onConnecting	KEYWORD2
+onConnected		KEYWORD2
+init			KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)

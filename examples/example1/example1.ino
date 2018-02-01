@@ -1,7 +1,7 @@
 #include <Arduino.h>
-#include <CMMC_NB_IoT.h>
+#include <CMMC_NB_IoT.h> 
+#include <AltSoftSerial.h>
 
-// #include <AltSoftSerial.h>
 CMMC_NB_IoT nb(&Serial2);
 
 void setup()
