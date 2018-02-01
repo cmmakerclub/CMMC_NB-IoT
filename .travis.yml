@@ -19,7 +19,8 @@ python:
 
 env:
     - PLATFORMIO_CI_SRC=examples/AT-bridge
-    - PLATFORMIO_CI_SRC=examples/example1
+    - PLATFORMIO_CI_SRC=examples/hwserial_example
+    - PLATFORMIO_CI_SRC=examples/altsoftserial_example
 
 install:
     - pip install -U platformio
