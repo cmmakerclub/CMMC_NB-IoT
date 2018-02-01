@@ -24,20 +24,22 @@ class CMMC_NB_IoT
     ~CMMC_NB_IoT() {};
 
     void init() {
-      String buf;
-      _writeCommand("AT", 5000);
-      _writeCommand("AT+NRB", 10L * 1000);
-      _writeCommand("AT+CGSN=1", 10L * 1000, &buf); 
-
-      // Serial.println(buf);
-
-      _writeCommand("AT+CFUN=1", 10L * 1000);
-      _writeCommand("AT+NCONFIG=AUTOCONNECT,TRUE", 10L * 1000);
-      _writeCommand("AT+CGATT=1", 10L * 1000);
+      char buf[100];
+      _writeCommand(F("AT"), 5L*1000);
+      _writeCommand(("AT+NRB"), 10L * 1000);
+      _writeCommand("AT+CIMI", 10L * 1000);  // imsi sim
+      _writeCommand(F("AT+CGSN=1"), 10L * 1000, buf);  // IMEI
+      Serial.println(buf);
+      _writeCommand(F("AT+CGMR"), 10L * 1000, buf);  // firmware
+      Serial.println(buf);
+      _writeCommand(F("AT+CFUN=1"), 10L * 1000);
+      // _writeCommand(F("AT+NCONFIG=AUTOCONNECT,TRUE"), 10L * 1000);
+      _writeCommand(F("AT+CGATT=1"), 10L * 1000);
       while (1) {
-        String s = "";
-        _writeCommand("AT+CGATT?", 10L * 1000, &s, 1);
-        if (s.indexOf(F("+CGATT:1")) != -1) {
+        String s;
+        _writeCommand("AT+CGATT?", 10L * 1000, buf, 1);
+        String ss = String(buf);
+        if (ss.indexOf(F("+CGATT:1")) != -1) {
           Serial.println("NB-IoT Network Connected.");
           break;
         }
@@ -62,41 +64,50 @@ class CMMC_NB_IoT
     deviceInfoCb_t _user_onDeviceReady_cb;
     Stream *_Serial;
 
-    uint32_t _writeCommand(String at, uint32_t timeoutMs, String *s = NULL, bool silent = false) {
+    uint32_t _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false) {
+      uint32_t startMs = millis();
+      timeoutMs = startMs + timeoutMs;
       if (!silent) {
-        Serial.print(String("requesting => ") + at); 
+        Serial.print(F("requesting => ")); 
+        Serial.print(at);
+        // Serial.print(F(" start: "));
+        // Serial.print(startMs);
+        // Serial.print(F(" timeout: "));
+        // Serial.print(timeoutMs);
       }
       bool reqSuccess = 0;
       at.trim();
       this->_Serial->write(at.c_str(), at.length());
       this->_Serial->write('\r');
-      uint32_t startMs = millis();
-      timeoutMs = millis() + timeoutMs;
-      String buffer;
+      String nbSerialBuffer;
       while (1) {
-        // Serial.println("wait nb rx.. ");
+        // if (millis() % 1000 == 0) 
+          // Serial.println("wait nb rx.. ");
         if (this->_Serial->available()) {
-          // String response = this->_Serial->readStringUntil('\n');
-          String response = this->_Serial->readString();
+          String response = this->_Serial->readStringUntil('\n');
           response.trim();
-          buffer += response;
+          nbSerialBuffer += response;
           if (response.indexOf(F("OK")) != -1) {
-            // Serial.print(String("+++") + response);
+            // Serial.print(String("+++") + nbSerialBuffer);
             if (!silent) {
-              Serial.println(String(" took ") + String(millis() - startMs) + "ms"); 
+              Serial.println(String(F(" (")) + String(millis() - startMs) + F("ms)")); 
             }
             reqSuccess = 1;
-            *s = buffer;
+            // *s = nbSerialBuffer;
+            if (s!= NULL) {
+              strcpy(s, nbSerialBuffer.c_str()); 
+            }
             break;
           }
-          delay(2);
-        }
-        if (!reqSuccess && ( millis() > timeoutMs) ) {
+        } else if ((millis() > timeoutMs) ) {
           reqSuccess = 0;
           Serial.println("wait timeout");
+          Serial.print(millis());
+          Serial.print(" ");
+          Serial.println(timeoutMs);
           break;
         }
-        delay(2);
+        delay(1);
       }
 
       return reqSuccess;
