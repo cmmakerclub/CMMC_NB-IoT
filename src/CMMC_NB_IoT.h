@@ -59,7 +59,7 @@ class CMMC_NB_IoT
     void onDeviceReboot(voidCb_t cb);
     bool createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV) {
       char buffer[40];
-      char resBuffer[60];
+      char resBuffer[40];
       sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config); 
       this->_writeCommand(buffer, 10L*1000, resBuffer, false);
       String t =String(resBuffer);
