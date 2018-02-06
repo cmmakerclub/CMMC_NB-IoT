@@ -46,13 +46,14 @@ void setup()
     String t = String(tmp);
     t.replace("OK", " - OK");
     Serial.println(t);
-    nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::ENABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11222, UDPConfig::ENABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11223, UDPConfig::ENABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11224, UDPConfig::ENABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11225, UDPConfig::ENABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11226, UDPConfig::ENABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11227, UDPConfig::ENABLE_RECV); 
+    nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11222, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11223, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11224, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11225, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11226, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11227, UDPConfig::DISABLE_RECV); 
+    byte b[2] = { 0x01, 0x02 };
   });
 
   nb.onDebugMsg([](const char* msg) {

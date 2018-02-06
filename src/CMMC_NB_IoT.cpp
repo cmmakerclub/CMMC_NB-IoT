@@ -1,13 +1,13 @@
 #include "CMMC_NB_IoT.h"
 
-CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
-  this->_Serial = s;
-  this->_user_debug_cb = [](const char* s) { };
-  this->_user_onDeviceReboot_cb = [](void) -> void { };
-  this->_user_onConnecting_cb = [](void) -> void { };
-  this->_user_onConnected_cb = [](void) -> void { };
-  this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
-};
+// CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
+//   this->_Serial = s;
+//   this->_user_debug_cb = [](const char* s) { };
+//   this->_user_onDeviceReboot_cb = [](void) -> void { };
+//   this->_user_onConnecting_cb = [](void) -> void { };
+//   this->_user_onConnected_cb = [](void) -> void { };
+//   this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
+// };
 
 CMMC_NB_IoT::~CMMC_NB_IoT() {};
 
@@ -16,8 +16,7 @@ void CMMC_NB_IoT::onDebugMsg(debugCb_t cb) {
   this->_user_debug_cb = cb;
 }
 
-void CMMC_NB_IoT::init() {
-  char tmp[40];
+void CMMC_NB_IoT::init() { 
   this->_writeCommand(F("AT"), 5L * 1000);
   this->_user_onDeviceReboot_cb();
   this->_writeCommand(F("AT+NRB"), 10L * 1000);
@@ -49,8 +48,7 @@ void CMMC_NB_IoT::init() {
       }
     }
   } 
-}
-
+} 
 
 void CMMC_NB_IoT::onDeviceReady(deviceInfoCb_t cb) {
   this->_user_onDeviceReady_cb = cb;
@@ -94,7 +92,7 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool sil
       if (response.indexOf(F("OK")) != -1) {
         if (!silent) {
           String out = String(F(" (")) + String(millis() - startMs) + F("ms)");
-          USER_DEBUG_PRINTF("%s\n", out.c_str());
+          USER_DEBUG_PRINTF("%s\n", out.c_str()); 
         }
         reqSuccess = 1;
         if (s != NULL) {
@@ -106,7 +104,7 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool sil
       reqSuccess = 0;
       USER_DEBUG_PRINTF(".. wait timeout");
       break;
-    }
+    } 
   }
   return reqSuccess;
 }
