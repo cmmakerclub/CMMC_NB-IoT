@@ -41,7 +41,6 @@ class CMMC_NB_IoT
       this->_user_onConnected_cb = [](void) -> void { };
       this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
       this->_bindMap = HashMap<String, Udp*, HASH_SIZE>();
-      // Serial.print
     };
     typedef struct {
       char firmware[20];
@@ -57,26 +56,33 @@ class CMMC_NB_IoT
     void onConnecting(voidCb_t cb); 
     void onConnected(voidCb_t cb); 
     void onDeviceReboot(voidCb_t cb);
-    bool createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV) {
+    int createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV) {
+      int idx = this->_bindMap.size();
+      String hashKey = String(hostname+":"+port);
       char buffer[40];
       char resBuffer[40];
+
       sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config); 
       this->_writeCommand(buffer, 10L*1000, resBuffer, false);
-      String t =String(resBuffer);
-      t.replace("OK", " - OK");
-      Serial.println(t);
-      String hashKey = String(hostname+":"+port);
-      if (this->_bindMap.contains(hashKey)) {
-        Serial.println(".......EXISTING HASH KEY"); 
+
+      String resp = String(resBuffer);
+      if (resp.indexOf("OK") != -1) {
+        if (!this->_bindMap.contains(hashKey)) {
+          Serial.println(String("Socket id=") + idx + " has been created.");
+          this->_bindMap[hashKey] = new Udp(hostname, port); 
+          // for (int i = 0 ; i < this->_bindMap.size(); i++) {
+          //   Serial.println(String("KEY AT ") + i + String(" = ") + this->_bindMap.keyAt(i));
+          // }
+        }
+        else {
+          Serial.println(".......EXISTING HASH KEY"); 
+        } 
       }
       else {
-        Serial.println(String("Adding ") + hashKey + " to HashMap");
-        this->_bindMap[hashKey] = new Udp(hostname, port); 
-        for (int i = 0 ; i < this->_bindMap.size(); i++) {
-          Serial.println(String("KEY AT ") + i + String(" = ") + this->_bindMap.keyAt(i));
-        }
-      } 
-      return true;
+        Serial.println("Create UDP Socket failed.");
+      }
+
+      return idx;
     };
     bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false);
 
