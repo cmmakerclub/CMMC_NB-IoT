@@ -24,7 +24,6 @@ void setup()
   });
 
   nb.onDeviceReady([](CMMC_NB_IoT::DeviceInfo device) {
-
     Serial.println("[user] Device Ready!");
     Serial.print(F("# Module IMEI-->  "));
     Serial.println(device.imei);
