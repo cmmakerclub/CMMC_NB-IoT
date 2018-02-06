@@ -48,10 +48,7 @@ void CMMC_NB_IoT::init() {
         this->_user_onConnecting_cb();
       }
     }
-  }
-
-  this->_writeCommand(F("AT+CSQ"), 10L * 1000, tmp);  // imsi sim
-  Serial.println(tmp);
+  } 
 }
 
 
@@ -71,7 +68,7 @@ void CMMC_NB_IoT::onDeviceReboot(voidCb_t cb) {
   this->_user_onDeviceReboot_cb = cb;
 }
 
-uint32_t CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool silent) {
+bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool silent) {
   uint32_t startMs = millis();
   timeoutMs = startMs + timeoutMs;
   if (!silent) {
@@ -107,10 +104,9 @@ uint32_t CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool
       }
     } else if ((millis() > timeoutMs) ) {
       reqSuccess = 0;
-      USER_DEBUG_PRINTF("wait timeout at %lu/%lu\n", millis(), timeoutMs);
+      USER_DEBUG_PRINTF(".. wait timeout");
       break;
     }
-    delay(2);
   }
   return reqSuccess;
 }

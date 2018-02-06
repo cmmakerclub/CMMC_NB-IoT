@@ -7,10 +7,10 @@ CMMC_NB_IoT nb(&Serial2);
 void setup()
 {
   Serial.begin(57600);
-  Serial.setTimeout(4);
-
   Serial2.begin(9600);
-  Serial2.setTimeout(6);
+
+  Serial.setTimeout(4); 
+  Serial2.setTimeout(4);
   
   delay(10);
   while (!Serial) {
@@ -24,6 +24,7 @@ void setup()
   });
 
   nb.onDeviceReady([](CMMC_NB_IoT::DeviceInfo device) {
+
     Serial.println("[user] Device Ready!");
     Serial.print(F("# Module IMEI-->  "));
     Serial.println(device.imei);
@@ -34,16 +35,28 @@ void setup()
   });
 
   nb.onConnecting([]() {
-    Serial.println("[user] Connecting to NB-IoT Network...");
+    // Serial.println("[user] Connecting to NB-IoT Network...");
     delay(1000);
   });
 
   nb.onConnected([]() {
     Serial.println("[user] NB-IoT Network connected");
+    char tmp[40];
+    nb._writeCommand(F("AT+CSQ"), 10L * 1000, tmp);  // imsi sim
+    String t = String(tmp);
+    t.replace("OK", " - OK");
+    Serial.println(t);
+    nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::ENABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11222, UDPConfig::ENABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11223, UDPConfig::ENABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11224, UDPConfig::ENABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11225, UDPConfig::ENABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11226, UDPConfig::ENABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11227, UDPConfig::ENABLE_RECV); 
   });
 
   nb.onDebugMsg([](const char* msg) {
-    // Serial.print(msg);
+    Serial.print(msg);
   });
 
   nb.init();

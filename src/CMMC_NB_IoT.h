@@ -10,9 +10,13 @@ typedef void (*voidCb_t)(void);
 #define USER_DEBUG_PRINTF(fmt, args...) { \
     sprintf(this->debug_buffer, fmt, ## args); \
     _user_debug_cb(this->debug_buffer); \
-  }
+} 
 
 
+enum UDPConfig { 
+  DISABLE_RECV=0, 
+  ENABLE_RECV=1,
+};
 class CMMC_NB_IoT
 {
   public:
@@ -30,9 +34,22 @@ class CMMC_NB_IoT
     void onConnecting(voidCb_t cb); 
     void onConnected(voidCb_t cb); 
     void onDeviceReboot(voidCb_t cb);
+    bool createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV) {
+      char buffer[40];
+      char resBuffer[60];
+      // <type>=RAW and <protocol>=6 will be accepted, 
+      // but are not supported and should not be used.0
+      sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config); 
+      this->_writeCommand(buffer, 10L*1000, resBuffer, false);
+      String t =String(resBuffer);
+      t.replace("OK", "");
+      Serial.println(t);
+      // (F("AT+NSOCR=DGRAM,17,11223,0"), 10L * 1000, tmp); // create udp
+      // nb.createUdpSocket("159.89.205.216", 11223, 1);
+    };
+    bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false);
 
   private:
-    uint32_t _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false);
     DeviceInfo deviceInfo;
     debugCb_t _user_debug_cb;
     char debug_buffer[60];
