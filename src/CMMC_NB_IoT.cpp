@@ -18,15 +18,17 @@ void CMMC_NB_IoT::onDebugMsg(debugCb_t cb) {
 
 void CMMC_NB_IoT::init() { 
   this->_writeCommand(F("AT"), 5L);
+  
   this->_user_onDeviceReboot_cb();
+
   this->_writeCommand(F("AT+NRB"), 10L);
   this->_writeCommand(F("AT+CFUN=1"), 10L);
   this->_writeCommand(F("AT+CGSN=1"), 10L, this->deviceInfo.imei);  // IMEI
   this->_writeCommand(F("AT+CGMR"), 10L, this->deviceInfo.firmware);  // firmware
-  this->_writeCommand(F("AT+CIMI"), 10L, this->deviceInfo.imsi);  // imsi sim
-
+  this->_writeCommand(F("AT+CIMI"), 10L, this->deviceInfo.imsi);  // imsi sim 
 
   this->_user_onDeviceReady_cb(this->deviceInfo);
+
   this->_writeCommand(F("AT+NCONFIG=AUTOCONNECT,TRUE"), 10L * 1000);
   this->_writeCommand(F("AT+CGATT=1"), 10L * 1000);
   char buf[20];

@@ -28,7 +28,6 @@ class CMMC_NB_IoT
   public:
     class Udp {
       public:
-        // Udp();
         Udp(String host, uint16_t port, CMMC_NB_IoT *modem) { 
           this->_hostname = host;
           this->_port = port; 
