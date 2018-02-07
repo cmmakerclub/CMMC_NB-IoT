@@ -72,7 +72,7 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool sil
   uint32_t startMs = millis();
   timeoutMs = startMs + timeoutMs;
   if (!silent) {
-    // USER_DEBUG_PRINTF("%s", at.c_str());
+    USER_DEBUG_PRINTF("%s", at.c_str());
     // Serial.print(F("requesting => "));
     /*
       Serial.print(F(" start: "));
