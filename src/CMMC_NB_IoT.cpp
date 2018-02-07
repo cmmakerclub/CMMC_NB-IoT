@@ -17,13 +17,14 @@ void CMMC_NB_IoT::onDebugMsg(debugCb_t cb) {
 }
 
 void CMMC_NB_IoT::init() { 
-  this->_writeCommand(F("AT"), 5L * 1000);
+  this->_writeCommand(F("AT"), 5L);
   this->_user_onDeviceReboot_cb();
-  this->_writeCommand(F("AT+NRB"), 10L * 1000);
-  this->_writeCommand(F("AT+CFUN=1"), 10L * 1000);
-  this->_writeCommand(F("AT+CGSN=1"), 10L * 1000, this->deviceInfo.imei);  // IMEI
-  this->_writeCommand(F("AT+CGMR"), 10L * 1000, this->deviceInfo.firmware);  // firmware
-  this->_writeCommand(F("AT+CIMI"), 10L * 1000, this->deviceInfo.imsi);  // imsi sim
+  this->_writeCommand(F("AT+NRB"), 10L);
+  this->_writeCommand(F("AT+CFUN=1"), 10L);
+  this->_writeCommand(F("AT+CGSN=1"), 10L, this->deviceInfo.imei);  // IMEI
+  this->_writeCommand(F("AT+CGMR"), 10L, this->deviceInfo.firmware);  // firmware
+  this->_writeCommand(F("AT+CIMI"), 10L, this->deviceInfo.imsi);  // imsi sim
+
 
   this->_user_onDeviceReady_cb(this->deviceInfo);
   this->_writeCommand(F("AT+NCONFIG=AUTOCONNECT,TRUE"), 10L * 1000);
@@ -67,10 +68,11 @@ void CMMC_NB_IoT::onDeviceReboot(voidCb_t cb) {
 }
 
 bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool silent) {
+  timeoutMs *= 1000L;
   uint32_t startMs = millis();
   timeoutMs = startMs + timeoutMs;
   if (!silent) {
-    USER_DEBUG_PRINTF("%s", at.c_str());
+    // USER_DEBUG_PRINTF("%s", at.c_str());
     // Serial.print(F("requesting => "));
     /*
       Serial.print(F(" start: "));
@@ -81,9 +83,15 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool sil
   }
   bool reqSuccess = 0;
   at.trim();
-  this->_Serial->write(at.c_str(), at.length());
+  // this->_Serial->write(at.c_str(), at.length());
+  for(int i = 0 ; i < at.length(); i++) {
+    this->_Serial->print(at[i]); 
+    if (i%60 ==0) {
+      delay(20);
+    }
+  }
   this->_Serial->write('\r');
-  String nbSerialBuffer;
+  String nbSerialBuffer="@";
   while (1) {
     if (this->_Serial->available()) {
       String response = this->_Serial->readStringUntil('\n');
@@ -102,6 +110,7 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool sil
       }
     } else if ((millis() > timeoutMs) ) {
       reqSuccess = 0;
+      USER_DEBUG_PRINTF(nbSerialBuffer.c_str());
       USER_DEBUG_PRINTF(".. wait timeout");
       break;
     } 
