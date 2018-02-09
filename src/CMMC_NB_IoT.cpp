@@ -12,7 +12,6 @@
 CMMC_NB_IoT::~CMMC_NB_IoT() {};
 
 void CMMC_NB_IoT::onDebugMsg(debugCb_t cb) {
-
   this->_user_debug_cb = cb;
 }
 
