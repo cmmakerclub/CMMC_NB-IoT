@@ -83,17 +83,6 @@ class CMMC_NB_IoT
 
         ~Udp() { }; 
       private:
-        // void toHexString(const byte array[], size_t len, char buffer[])
-        // {
-        //   for (unsigned int i = 0; i < len; i++)
-        //   {
-        //     byte nib1 = (array[i] >> 4) & 0x0F;
-        //     byte nib2 = (array[i] >> 0) & 0x0F;
-        //     buffer[i * 2 + 0] = nib1  < 0xA ? '0' + nib1  : 'A' + nib1  - 0xA;
-        //     buffer[i * 2 + 1] = nib2  < 0xA ? '0' + nib2  : 'A' + nib2  - 0xA;
-        //   }
-        //   buffer[len * 2] = '\0';
-        // }
         CMMC_NB_IoT *_modem;
         Stream *_modemSerial;
         String _host;
@@ -110,12 +99,6 @@ class CMMC_NB_IoT
       this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
       this->_socketsMap = HashMap<String, Udp*, HASH_SIZE>();
     };
-    // void setModem(Stream *s) {
-    //   this->_modemSerial = s;
-    //   Serial.print("set modem serial = ");
-    //   Serial.println((uint32_t) s);
-    //   Serial.println((uint32_t) this->_modemSerial);
-    // }
     typedef struct {
       char firmware[20];
       char imei[20];
