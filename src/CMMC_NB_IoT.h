@@ -11,18 +11,18 @@ typedef void (*voidCb_t)(void);
 #define USER_DEBUG_PRINTF(fmt, args...) { \
     sprintf(this->debug_buffer, fmt, ## args); \
     _user_debug_cb(this->debug_buffer); \
-} 
+  }
 
 #define HASH_SIZE 7
 
 #ifndef DEBUG_BUFFER_SIZE
-  #define DEBUG_BUFFER_SIZE 64
+#define DEBUG_BUFFER_SIZE 64
 #endif
 
 
-enum UDPConfig { 
-  DISABLE_RECV=0, 
-  ENABLE_RECV=1,
+enum UDPConfig {
+  DISABLE_RECV = 0,
+  ENABLE_RECV = 1,
 };
 
 
@@ -32,32 +32,32 @@ class CMMC_NB_IoT
   public:
     class Udp {
       public:
-        Udp(String host, uint16_t port, uint8_t socketId, CMMC_NB_IoT *modem) { 
+        Udp(String host, uint16_t port, uint8_t socketId, CMMC_NB_IoT *modem) {
           this->_host = host;
-          this->_port = port; 
+          this->_port = port;
           this->_socketId = socketId;
           this->_modem = modem;
           this->_modemSerial = modem->getModemSerial();
         };
 
-        bool sendMessage(String payload) { 
-          this->sendMessage((uint8_t*)payload.c_str(), payload.length()); 
+        bool sendMessage(String payload) {
+          this->sendMessage((uint8_t*)payload.c_str(), payload.length());
           return true;
         }
 
-        bool sendMessage(uint8_t *payload, uint16_t len) { 
+        bool sendMessage(uint8_t *payload, uint16_t len) {
           char buffer[45];
-          sprintf(buffer, "AT+NSOST=%d,%s,%d,%d,", this->_socketId, _host.c_str(), _port, len); 
+          sprintf(buffer, "AT+NSOST=%d,%s,%d,%d,", this->_socketId, _host.c_str(), _port, len);
           this->_modemSerial->write((char*)buffer, strlen(buffer));
           char t[3];
           while (len--) {
             uint8_t b = *(payload++);
             sprintf(t, "%02x", b);
             this->_modemSerial->write(t, 2);
-          } 
+          }
 
           this->_modemSerial->write('\r');
-          String nbSerialBuffer="@";
+          String nbSerialBuffer = "@";
           int ct = 0;
 
           while (1) {
@@ -71,7 +71,7 @@ class CMMC_NB_IoT
             }
             else {
               ct++;
-              if (ct>50) {
+              if (ct > 50) {
                 return false;
                 break;
               }
@@ -81,7 +81,7 @@ class CMMC_NB_IoT
           }
         }
 
-        ~Udp() { }; 
+        ~Udp() { };
       private:
         CMMC_NB_IoT *_modem;
         Stream *_modemSerial;
@@ -106,38 +106,38 @@ class CMMC_NB_IoT
     } DeviceInfo;
     typedef void(*deviceInfoCb_t)(DeviceInfo);
     ~CMMC_NB_IoT();
-    void onDebugMsg(debugCb_t cb); 
+    void onDebugMsg(debugCb_t cb);
     void begin(Stream *s = 0);
     void onDeviceReady(deviceInfoCb_t cb);
-    void onConnecting(voidCb_t cb); 
-    void onConnected(voidCb_t cb); 
+    void onConnecting(voidCb_t cb);
+    void onConnected(voidCb_t cb);
     void onDeviceReboot(voidCb_t cb);
     Stream* getModemSerial() {
       return this->_modemSerial;
     }
-    
+
     int createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV) {
       int idx = this->_socketsMap.size();
-      String hashKey = String(hostname+":"+port);
+      String hashKey = String(hostname + ":" + port);
       char resBuffer[40];
-      char buffer[40]; 
-      sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config); 
+      char buffer[40];
+      sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config);
       const int MAX_RETRIES = 3;
       int retries = 0;
-      while(1 & retries < MAX_RETRIES) {
+      while (1 & retries < MAX_RETRIES) {
         this->_writeCommand(buffer, 10L, resBuffer, false);
         String resp = String(resBuffer);
         if (resp.indexOf("OK") != -1) {
           if (!this->_socketsMap.contains(hashKey)) {
             USER_DEBUG_PRINTF("socket id = %d has been created.", idx)
-            this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this); 
+            this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this);
             // for (int i = 0 ; i < this->_socketsMap.size(); i++) {
             //   USER_DEBUG_ PRINTF(String("KEY AT ") + i + String(" = ") + this->_socketsMap.keyAt(i));
             // }
           }
           else {
-            USER_DEBUG_PRINTF(".......EXISTING HASH KEY"); 
-          } 
+            USER_DEBUG_PRINTF(".......EXISTING HASH KEY");
+          }
           break;
         }
         else {
@@ -153,7 +153,7 @@ class CMMC_NB_IoT
 
     bool sendMessage(String msg, uint8_t socketId = 0) {
       return this->_socketsMap.valueAt(socketId)->sendMessage(msg);
-    } 
+    }
 
   private:
     DeviceInfo deviceInfo;
@@ -163,7 +163,7 @@ class CMMC_NB_IoT
     voidCb_t _user_onDeviceReboot_cb;
     voidCb_t _user_onConnecting_cb;
     voidCb_t _user_onConnected_cb;
-    Stream *_modemSerial; 
+    Stream *_modemSerial;
     HashMap<String, Udp*, HASH_SIZE> _socketsMap;
 };
 
