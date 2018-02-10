@@ -115,31 +115,37 @@ class CMMC_NB_IoT
     Stream* getModemSerial() {
       return this->_modemSerial;
     }
-    uint8_t createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV) {
+    
+    int createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV) {
       int idx = this->_socketsMap.size();
       String hashKey = String(hostname+":"+port);
       char resBuffer[40];
       char buffer[40]; 
       sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config); 
-      this->_writeCommand(buffer, 10L, resBuffer, false);
-      String resp = String(resBuffer);
-      Serial.println(resp);
-      if (resp.indexOf("OK") != -1) {
-        if (!this->_socketsMap.contains(hashKey)) {
-          Serial.println(String("Socket id=") + idx + " has been created.");
-          this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this); 
-          // for (int i = 0 ; i < this->_socketsMap.size(); i++) {
-          //   Serial.println(String("KEY AT ") + i + String(" = ") + this->_socketsMap.keyAt(i));
-          // }
+      const int MAX_RETRIES = 3;
+      int retries = 0;
+      while(1 & retries < MAX_RETRIES) {
+        this->_writeCommand(buffer, 10L, resBuffer, false);
+        String resp = String(resBuffer);
+        if (resp.indexOf("OK") != -1) {
+          if (!this->_socketsMap.contains(hashKey)) {
+            USER_DEBUG_PRINTF("socket id = %d has been created.", idx)
+            this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this); 
+            // for (int i = 0 ; i < this->_socketsMap.size(); i++) {
+            //   USER_DEBUG_ PRINTF(String("KEY AT ") + i + String(" = ") + this->_socketsMap.keyAt(i));
+            // }
+          }
+          else {
+            USER_DEBUG_PRINTF(".......EXISTING HASH KEY"); 
+          } 
+          break;
         }
         else {
-          Serial.println(".......EXISTING HASH KEY"); 
-        } 
+          retries++;
+          idx = -1;
+          USER_DEBUG_PRINTF("Create UDP Socket failed.");
+        }
       }
-      else {
-        Serial.println("Create UDP Socket failed.");
-      }
-
       return idx;
     };
 
