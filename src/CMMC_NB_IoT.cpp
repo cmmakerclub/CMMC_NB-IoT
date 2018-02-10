@@ -1,7 +1,7 @@
 #include "CMMC_NB_IoT.h"
 
 // CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
-//   this->_Serial = s;
+//   this->_modemSerial = s;
 //   this->_user_debug_cb = [](const char* s) { };
 //   this->_user_onDeviceReboot_cb = [](void) -> void { };
 //   this->_user_onConnecting_cb = [](void) -> void { };
@@ -15,9 +15,11 @@ void CMMC_NB_IoT::onDebugMsg(debugCb_t cb) {
   this->_user_debug_cb = cb;
 }
 
-void CMMC_NB_IoT::init() { 
+void CMMC_NB_IoT::begin(Stream *s) { 
+  if (s!=0) {
+    this->_modemSerial = s;
+  }
   this->_writeCommand(F("AT"), 5L);
-  
   this->_user_onDeviceReboot_cb();
 
   this->_writeCommand(F("AT+NRB"), 10L);
@@ -49,6 +51,7 @@ void CMMC_NB_IoT::init() {
         this->_user_onConnecting_cb();
       }
     }
+    delay(0);
   } 
 } 
 
@@ -69,6 +72,10 @@ void CMMC_NB_IoT::onDeviceReboot(voidCb_t cb) {
 }
 
 bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool silent) {
+  if (this->_modemSerial == 0) {
+    USER_DEBUG_PRINTF("INVALID MODEM ADDRESS.");
+    return false;
+  }
   timeoutMs *= 1000L;
   uint32_t startMs = millis();
   timeoutMs = startMs + timeoutMs;
@@ -84,18 +91,18 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool sil
   }
   bool reqSuccess = 0;
   at.trim();
-  // this->_Serial->write(at.c_str(), at.length());
-  for(int i = 0 ; i < at.length(); i++) {
-    this->_Serial->print(at[i]); 
-    if (i%60 ==0) {
-      delay(20);
-    }
-  }
-  this->_Serial->write('\r');
+  this->_modemSerial->write(at.c_str(), at.length());
+  // for(int i = 0 ; i < at.length(); i++) {
+  //   this->_modemSerial->print(at[i]); 
+  //   if (i%60 ==0) {
+  //     delay(5);
+  //   }
+  // }
+  this->_modemSerial->write('\r');
   String nbSerialBuffer="@";
   while (1) {
-    if (this->_Serial->available()) {
-      String response = this->_Serial->readStringUntil('\n');
+    if (this->_modemSerial->available()) {
+      String response = this->_modemSerial->readStringUntil('\n');
       response.trim();
       nbSerialBuffer += response;
       if (response.indexOf(F("OK")) != -1) {
@@ -115,6 +122,7 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool sil
       USER_DEBUG_PRINTF(".. wait timeout");
       break;
     } 
+    delay(0);
   }
   return reqSuccess;
 }

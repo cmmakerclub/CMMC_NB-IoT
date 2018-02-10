@@ -14,7 +14,11 @@ typedef void (*voidCb_t)(void);
 } 
 
 #define HASH_SIZE 7
-#define DEBUG_BUFFER_SIZE 1500
+
+#ifndef DEBUG_BUFFER_SIZE
+  #define DEBUG_BUFFER_SIZE 64
+#endif
+
 
 enum UDPConfig { 
   DISABLE_RECV=0, 
@@ -71,7 +75,7 @@ class CMMC_NB_IoT
     };
 
     CMMC_NB_IoT(Stream *s) {
-      this->_Serial = s;
+      this->_modemSerial = s;
       this->_user_debug_cb = [](const char* s) { };
       this->_user_onDeviceReboot_cb = [](void) -> void { };
       this->_user_onConnecting_cb = [](void) -> void { };
@@ -79,16 +83,21 @@ class CMMC_NB_IoT
       this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
       this->_socketsMap = HashMap<String, Udp*, HASH_SIZE>();
     };
+    // void setModem(Stream *s) {
+    //   this->_modemSerial = s;
+    //   Serial.print("set modem serial = ");
+    //   Serial.println((uint32_t) s);
+    //   Serial.println((uint32_t) this->_modemSerial);
+    // }
     typedef struct {
       char firmware[20];
       char imei[20];
       char imsi[20];
     } DeviceInfo;
     typedef void(*deviceInfoCb_t)(DeviceInfo);
-    // CMMC_NB_IoT(Stream *s);
     ~CMMC_NB_IoT();
     void onDebugMsg(debugCb_t cb); 
-    void init(); 
+    void begin(Stream *s = 0);
     void onDeviceReady(deviceInfoCb_t cb);
     void onConnecting(voidCb_t cb); 
     void onConnected(voidCb_t cb); 
@@ -135,7 +144,7 @@ class CMMC_NB_IoT
     voidCb_t _user_onDeviceReboot_cb;
     voidCb_t _user_onConnecting_cb;
     voidCb_t _user_onConnected_cb;
-    Stream *_Serial; 
+    Stream *_modemSerial; 
     HashMap<String, Udp*, HASH_SIZE> _socketsMap;
 };
 

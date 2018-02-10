@@ -62,7 +62,6 @@ class CMMC_Packet
     CMMC_Packet(uint8_t project, uint8_t version, uint8_t header[2], uint8_t footer[2]);
     ~CMMC_Packet(); 
     void init();
-    // const char* getHexString(); 
     static void toHexString(const u8 array[], size_t len, char buffer[]); 
     const CMMC_PACKET_T* getPacketPtr(); 
     uint32_t checksum(uint8_t* data, size_t len); 
@@ -71,6 +70,31 @@ class CMMC_Packet
     void dump(const u8* data, size_t size);
     bool setSensorName(const char name[16]);
     bool setName(const char name[16]);
+    void setField(uint8_t field, uint32_t val) {
+      if (field == 1) {
+         this->_packet.data.field1 = val;
+      }
+      else if (field == 2) {
+         this->_packet.data.field2 = val;
+      }
+      else if (field == 3) {
+         this->_packet.data.field3 = val;
+      }
+      else if (field == 4) {
+         this->_packet.data.field4 = val;
+      }
+      else if (field == 5) {
+         this->_packet.data.field5 = val;
+      }
+      else if (field == 6) {
+         this->_packet.data.field6 = val;
+      }
+      else {
+
+      }
+      this->updatePacketSum(); 
+    }
+
     void debug(cmmc_debug_cb_t);
     size_t size() {
       return sizeof(CMMC_PACKET_T);
