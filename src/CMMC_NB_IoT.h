@@ -71,7 +71,7 @@ class CMMC_NB_IoT
             }
             else {
               ct++;
-              if (ct > 50) {
+              if (ct > 500) {
                 return false;
                 break;
               }
@@ -124,26 +124,29 @@ class CMMC_NB_IoT
       sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config);
       const int MAX_RETRIES = 3;
       int retries = 0;
-      while (1 & retries < MAX_RETRIES) {
+      bool finished = false;
+      while ( (retries < MAX_RETRIES) && !finished) {
         this->_writeCommand(buffer, 10L, resBuffer, false);
         String resp = String(resBuffer);
+        Serial.println(resp);
         if (resp.indexOf("OK") != -1) {
           if (!this->_socketsMap.contains(hashKey)) {
-            USER_DEBUG_PRINTF("socket id = %d has been created.", idx)
+            USER_DEBUG_PRINTF("socket id=%d has been created.\n", idx)
             this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this);
             // for (int i = 0 ; i < this->_socketsMap.size(); i++) {
             //   USER_DEBUG_ PRINTF(String("KEY AT ") + i + String(" = ") + this->_socketsMap.keyAt(i));
             // }
           }
           else {
-            USER_DEBUG_PRINTF(".......EXISTING HASH KEY");
+            USER_DEBUG_PRINTF(".......EXISTING HASH KEY\n");
           }
+          finished = true;
           break;
         }
         else {
           retries++;
           idx = -1;
-          USER_DEBUG_PRINTF("Create UDP Socket failed.");
+          USER_DEBUG_PRINTF("Create UDP Socket failed.\n");
         }
       }
       return idx;

@@ -41,7 +41,7 @@ void setup()
   nb.onConnected([]() {
     Serial.println("[user] NB-IoT Network connected");
     char tmp[400];
-    nb._writeCommand(F("AT+CSQ"), 10L * 1000, tmp);  // imsi sim
+    nb._writeCommand(F("AT+CSQ"), 10L, tmp);  // imsi sim
     String t = String(tmp);
     t.replace("OK", " - OK");
     Serial.println(t);

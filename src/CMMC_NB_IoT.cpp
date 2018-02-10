@@ -30,12 +30,11 @@ void CMMC_NB_IoT::begin(Stream *s) {
 
   this->_user_onDeviceReady_cb(this->deviceInfo);
 
-  this->_writeCommand(F("AT+NCONFIG=AUTOCONNECT,TRUE"), 10L * 1000);
-  this->_writeCommand(F("AT+CGATT=1"), 10L * 1000);
+  this->_writeCommand(F("AT+CGATT=1"), 10L);
   char buf[20];
   while (1) {
     String s;
-    this->_writeCommand(F("AT+CGATT?"), 10L * 1000, buf, 1);
+    this->_writeCommand(F("AT+CGATT?"), 10L, buf, 1);
     String ss = String(buf);
     if (ss.indexOf(F("+CGATT:1")) != -1) {
       USER_DEBUG_PRINTF("%s\n", String("NB-IoT Network Connected.").c_str());
@@ -71,58 +70,58 @@ void CMMC_NB_IoT::onDeviceReboot(voidCb_t cb) {
   this->_user_onDeviceReboot_cb = cb;
 }
 
-bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *s, bool silent) {
+bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *outStr, bool silent) {
   if (this->_modemSerial == 0) {
     USER_DEBUG_PRINTF("INVALID MODEM ADDRESS.");
     return false;
   }
   timeoutMs *= 1000L;
   uint32_t startMs = millis();
-  timeoutMs = startMs + timeoutMs;
-  if (!silent) {
-    USER_DEBUG_PRINTF("%s", at.c_str());
-    // Serial.print(F("requesting => "));
-    /*
-      Serial.print(F(" start: "));
-      Serial.print(startMs);
-      Serial.print(F(" timeout: "));
-      Serial.print(timeoutMs);
-    */
-  }
+  uint32_t nextTimeout = startMs + timeoutMs;
   bool reqSuccess = 0;
   at.trim();
-  this->_modemSerial->write(at.c_str(), at.length());
-  // for(int i = 0 ; i < at.length(); i++) {
-  //   this->_modemSerial->print(at[i]); 
-  //   if (i%60 ==0) {
-  //     delay(5);
-  //   }
-  // }
-  this->_modemSerial->write('\r');
-  String nbSerialBuffer="@";
-  while (1) {
-    if (this->_modemSerial->available()) {
-      String response = this->_modemSerial->readStringUntil('\n');
-      response.trim();
-      nbSerialBuffer += response;
-      if (response.indexOf(F("OK")) != -1) {
-        if (!silent) {
-          String out = String(F(" (")) + String(millis() - startMs) + F("ms)");
-          USER_DEBUG_PRINTF("%s\n", out.c_str()); 
+
+  const int MAX_RETRIES = 3;
+  int retries = 0;
+  bool finished = false;
+  while ((retries <= MAX_RETRIES) && !finished) {
+    if (!silent) {
+      USER_DEBUG_PRINTF("%s", at.c_str());
+    }
+    this->_modemSerial->write(at.c_str(), at.length());
+    this->_modemSerial->write('\r');
+    String nbSerialBuffer="@";
+    while (1) {
+      if (this->_modemSerial->available()) {
+        String response = this->_modemSerial->readStringUntil('\n');
+        response.trim();
+        nbSerialBuffer += response;
+        if (response.indexOf(F("OK")) != -1) {
+          if (!silent) {
+            String out = String(F(" (")) + String(millis() - startMs) + F("ms)");
+            USER_DEBUG_PRINTF("%s\n", out.c_str()); 
+          }
+          if (outStr != NULL) {
+            strcpy(outStr, nbSerialBuffer.c_str());
+          }
+          finished = true;
+          reqSuccess = 1;
+          break;
         }
-        reqSuccess = 1;
-        if (s != NULL) {
-          strcpy(s, nbSerialBuffer.c_str());
+      } else if ((millis() > nextTimeout) ) {
+        nextTimeout =+ timeoutMs;
+        retries++;
+        reqSuccess = 0;
+        USER_DEBUG_PRINTF("\n.. wait timeout wit resp: ");
+        USER_DEBUG_PRINTF("%s\n", nbSerialBuffer.c_str());
+        if (retries <= MAX_RETRIES) {
+          USER_DEBUG_PRINTF("[RETRY => %d \n", retries);
         }
+        nbSerialBuffer="@";
         break;
-      }
-    } else if ((millis() > timeoutMs) ) {
-      reqSuccess = 0;
-      USER_DEBUG_PRINTF(nbSerialBuffer.c_str());
-      USER_DEBUG_PRINTF(".. wait timeout");
-      break;
-    } 
-    delay(0);
+      } 
+      delay(0);
+    }
   }
   return reqSuccess;
 }

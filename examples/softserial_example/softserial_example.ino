@@ -59,6 +59,10 @@ void setup()
     int ct = 1;
     String _tmp = "";
     int sockId = nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11222, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11223, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11224, UDPConfig::DISABLE_RECV);
     while(1) {
       _tmp += String(ct) + "-";
       Serial.println(String("payload size = ") + (_tmp.length()) + String("byte"));
