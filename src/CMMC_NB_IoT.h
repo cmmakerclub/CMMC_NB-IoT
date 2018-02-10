@@ -35,7 +35,7 @@ class CMMC_NB_IoT
         };
 
         bool sendMessage(String payload, uint8_t socketId = 0) { 
-          this->sendMessage(payload.c_str(), payload.length(), socketId);
+          this->sendMessage((uint8_t*)payload.c_str(), payload.length(), socketId);
           return true;
         }
 
@@ -45,11 +45,11 @@ class CMMC_NB_IoT
           } 
           static char buffer[DEBUG_BUFFER_SIZE] = {0}, resBuffer[40] = {0}; 
           sprintf(buffer, "AT+NSOST=%d,%s,%d,%d,", socketId, _hostname.c_str(), _port, len); 
-          toHexString(payload, len, buffer+strlen(buffer));
+          // toHexString(payload, len, buffer+strlen(buffer));
           // Serial.println(buffer); 
           // buffer[strlen(buffer)+]
           // Serial.println(strlen(buffer));
-          this->_modem->_writeCommand(String(buffer), 10L, resBuffer, false); 
+          // this->_modem->_writeCommand(String(buffer), 10L, resBuffer, false); 
         }
 
         ~Udp() { }; 

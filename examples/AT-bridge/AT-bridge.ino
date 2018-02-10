@@ -1,16 +1,20 @@
 #include <Arduino.h>
 #include <CMMC_NB_IoT.h>
-#include "AltSoftSerial.h"
-AltSoftSerial nbSerial;
+#include <SoftwareSerial.h>
+
+#define RX 14
+#define TX 12
+SoftwareSerial swSerial(RX, TX, false, 128);
 
 
 void setup()
 { 
   Serial.begin(57600);
-  nbSerial.begin(9600);
-  Serial.println("Chiang Mai Maker Club's AT-Bridge engine is started.");
+  swSerial.begin(9600);
+  Serial.println();
+  Serial.println("Chiang Mai Maker Club's AT-Bridge engine is started."); 
   Serial.setTimeout(2);
-  nbSerial.setTimeout(6);
+  swSerial.setTimeout(6);
 }
 
 String input;
@@ -31,12 +35,13 @@ void loop()
         Serial.println("HEX MODE DISABLED.");
         hexMode = 0; 
     }
-    nbSerial.write(input.c_str(), input.length());
-    nbSerial.write('\r');
+    swSerial.write(input.c_str(), input.length());
+    delay(2);
+    swSerial.write('\r');
   }
 
-  if (nbSerial.available() > 0)  {
-      String response = nbSerial.readString(); 
+  if (swSerial.available() > 0)  {
+      String response = swSerial.readString(); 
       if (hexMode == 1) { 
         static char buf[3];
         Serial.print("+");
