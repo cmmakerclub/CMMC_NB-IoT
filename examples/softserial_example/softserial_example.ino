@@ -7,7 +7,7 @@
 
 #define RX 14
 #define TX 12
-static SoftwareSerial modemSerial(RX, TX, false, 128);
+static SoftwareSerial modemSerial(RX, TX, false, 256);
 
 const uint8_t PROJECT = 1;
 const uint8_t VERSION = 1;
@@ -33,10 +33,7 @@ void setup()
   while(!modemSerial) {
     Serial.println("wait modem serial..");
     delay(10);
-  }
-
-  Serial.print("ino soft Serial addr... ");
-  Serial.println((uint32_t) &modemSerial);
+  } 
 
   nb.onDeviceReboot([]() {
     Serial.println(F("[user] Device being rebooted."));
@@ -72,7 +69,7 @@ void setup()
       _tmp += String(ct) + "-";
       Serial.println(String("payload size = ") + _tmp.length()) + String("byte");
       nb.sendMessage(_tmp); 
-      delay(2000);
+      delay(2L*1000);
       ct++;
     }
   });

@@ -32,46 +32,83 @@ class CMMC_NB_IoT
   public:
     class Udp {
       public:
-        Udp(String host, uint16_t port, CMMC_NB_IoT *modem) { 
-          this->_hostname = host;
+        Udp(String host, uint16_t port, uint8_t socketId, CMMC_NB_IoT *modem) { 
+          this->_host = host;
           this->_port = port; 
+          this->_socketId = socketId;
           this->_modem = modem;
+          this->_modemSerial = modem->getModemSerial();
         };
 
-        bool sendMessage(String payload, uint8_t socketId = 0) { 
-          this->sendMessage((uint8_t*)payload.c_str(), payload.length(), socketId);
+        bool sendMessage(String payload) { 
+          this->sendMessage((uint8_t*)payload.c_str(), payload.length()); 
           return true;
         }
 
-        bool sendMessage(uint8_t *payload, size_t len, uint8_t socketId = 0) { 
-          if (len > 512) {
-            return false;
-          } 
-          static char buffer[DEBUG_BUFFER_SIZE] = {0}, resBuffer[40] = {0}; 
-          sprintf(buffer, "AT+NSOST=%d,%s,%d,%d,", socketId, _hostname.c_str(), _port, len); 
-          // toHexString(payload, len, buffer+strlen(buffer));
-          // Serial.println(buffer); 
-          // buffer[strlen(buffer)+]
-          // Serial.println(strlen(buffer));
-          // this->_modem->_writeCommand(String(buffer), 10L, resBuffer, false); 
+        bool sendMessage(uint8_t *payload, uint16_t len) { 
+          Serial.println("call sendMessage");
+          Serial.println((char*) payload); 
+          // this->_modem->sendMessage(payload, len, this->_socketId);
+          // static char buffer[140] = {0}, resBuffer[40] = {0}; 
+          char buffer[50];
+          sprintf(buffer, "AT+NSOST=%d,%s,%d,%d,", this->_socketId, _host.c_str(), _port, len); 
+          Serial.println(buffer);
+          // Serial.println(this->_modemSerial->write((char*)buffer, strlen(buffer)));
+          this->_modemSerial->print(buffer);
+          char t[3];
+          while (len--) {
+            uint8_t b = *(payload++);
+            sprintf(t, "%02x", b);
+            Serial.print(t);
+            Serial.print("");
+            this->_modemSerial->write(t, 2);
+          }
+          Serial.println();
+          this->_modemSerial->write('\r');
+          String nbSerialBuffer="@";
+          int ct = 0;
+          while (1) {
+            if (this->_modemSerial->available()) {
+              String response = this->_modemSerial->readStringUntil('\n');
+              response.trim();
+              nbSerialBuffer += response;
+              if (response.indexOf("OK") != -1) {
+                // this->_modemSerial.flush();
+                Serial.println("Sent.");
+                // Serial.println(nbSerialBuffer);
+                break;
+              }
+            }
+            else {
+              ct++;
+              Serial.println("Wait response...");
+              delay(1000);
+              if (ct>15) {
+                break;
+              }
+            }
+            delay(0);
+          }
         }
 
         ~Udp() { }; 
       private:
-        void toHexString(const byte array[], size_t len, char buffer[])
-        {
-          for (unsigned int i = 0; i < len; i++)
-          {
-            byte nib1 = (array[i] >> 4) & 0x0F;
-            byte nib2 = (array[i] >> 0) & 0x0F;
-            buffer[i * 2 + 0] = nib1  < 0xA ? '0' + nib1  : 'A' + nib1  - 0xA;
-            buffer[i * 2 + 1] = nib2  < 0xA ? '0' + nib2  : 'A' + nib2  - 0xA;
-          }
-          buffer[len * 2] = '\0';
-        }
+        // void toHexString(const byte array[], size_t len, char buffer[])
+        // {
+        //   for (unsigned int i = 0; i < len; i++)
+        //   {
+        //     byte nib1 = (array[i] >> 4) & 0x0F;
+        //     byte nib2 = (array[i] >> 0) & 0x0F;
+        //     buffer[i * 2 + 0] = nib1  < 0xA ? '0' + nib1  : 'A' + nib1  - 0xA;
+        //     buffer[i * 2 + 1] = nib2  < 0xA ? '0' + nib2  : 'A' + nib2  - 0xA;
+        //   }
+        //   buffer[len * 2] = '\0';
+        // }
         CMMC_NB_IoT *_modem;
-        String _hostname;
+        Stream *_modemSerial;
+        String _host;
         uint16_t _port;
+        uint8_t _socketId;
     };
 
     CMMC_NB_IoT(Stream *s) {
@@ -102,19 +139,22 @@ class CMMC_NB_IoT
     void onConnecting(voidCb_t cb); 
     void onConnected(voidCb_t cb); 
     void onDeviceReboot(voidCb_t cb);
+    Stream* getModemSerial() {
+      return this->_modemSerial;
+    }
     uint8_t createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV) {
       int idx = this->_socketsMap.size();
       String hashKey = String(hostname+":"+port);
       char resBuffer[40];
       char buffer[40]; 
       sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config); 
-      this->_writeCommand(buffer, 10L*1000, resBuffer, false);
-
+      this->_writeCommand(buffer, 10L, resBuffer, false);
       String resp = String(resBuffer);
+      Serial.println(resp);
       if (resp.indexOf("OK") != -1) {
         if (!this->_socketsMap.contains(hashKey)) {
           Serial.println(String("Socket id=") + idx + " has been created.");
-          this->_socketsMap[hashKey] = new Udp(hostname, port, this); 
+          this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this); 
           // for (int i = 0 ; i < this->_socketsMap.size(); i++) {
           //   Serial.println(String("KEY AT ") + i + String(" = ") + this->_socketsMap.keyAt(i));
           // }
@@ -133,8 +173,23 @@ class CMMC_NB_IoT
     bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false);
 
     bool sendMessage(String msg, uint8_t socketId = 0) {
-      this->_socketsMap.valueAt(socketId)->sendMessage(msg, socketId);
+      this->_socketsMap.valueAt(socketId)->sendMessage(msg);
     }
+
+
+    // bool sendMessage(String host, uint16_t port, uint8_t *payload, size_t len, int socketId) { 
+    //   USER_DEBUG_PRINTF("CMMC_NB_IoT::sendMessage(uint8*, size_t, uint8_t)\n");
+    //     char buffer[40] = {0}, resBuffer[40] = {0}; 
+    //     sprintf(buffer, "AT+NSOST=%d,%s,%d,%d,", socketId, host.c_str(), port, len); 
+    //     this->_modemSerial->write(buffer, strlen(buffer)); 
+    //       while (1) {
+    //         if (this->_modemSerial->available()) {
+    //           String response = this->_modemSerial->readStringUntil('\n');
+    //           response.trim(); 
+    //         }
+    //         delay(0);
+    //       } 
+    // }
 
   private:
     DeviceInfo deviceInfo;
