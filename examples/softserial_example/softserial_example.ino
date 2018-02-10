@@ -64,11 +64,18 @@ void setup()
     int ct = 1;
     int sockId = nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::DISABLE_RECV);
     nb.createUdpSocket("159.89.205.216", 11222, UDPConfig::DISABLE_RECV);
+    nb.createUdpSocket("159.89.205.216", 11223, UDPConfig::DISABLE_RECV);
     String _tmp = "";
     while(1) {
       _tmp += String(ct) + "-";
-      Serial.println(String("payload size = ") + _tmp.length()) + String("byte");
-      nb.sendMessage(_tmp); 
+      Serial.println(String("payload size = ") + (_tmp.length()) + String("byte"));
+      uint32_t t = millis();
+      if (nb.sendMessage(_tmp, 0)) {
+        Serial.println(String("Data Sent .. ") + (millis() - t) + "ms"); 
+      }
+      else {
+        Serial.println(String("Send failed.. ") + (millis() - t) + "ms"); 
+      }
       delay(2L*1000);
       ct++;
     }

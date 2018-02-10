@@ -46,46 +46,36 @@ class CMMC_NB_IoT
         }
 
         bool sendMessage(uint8_t *payload, uint16_t len) { 
-          Serial.println("call sendMessage");
-          Serial.println((char*) payload); 
-          // this->_modem->sendMessage(payload, len, this->_socketId);
-          // static char buffer[140] = {0}, resBuffer[40] = {0}; 
-          char buffer[50];
+          char buffer[45];
           sprintf(buffer, "AT+NSOST=%d,%s,%d,%d,", this->_socketId, _host.c_str(), _port, len); 
-          Serial.println(buffer);
-          // Serial.println(this->_modemSerial->write((char*)buffer, strlen(buffer)));
-          this->_modemSerial->print(buffer);
+          this->_modemSerial->write((char*)buffer, strlen(buffer));
           char t[3];
           while (len--) {
             uint8_t b = *(payload++);
             sprintf(t, "%02x", b);
-            Serial.print(t);
-            Serial.print("");
             this->_modemSerial->write(t, 2);
-          }
-          Serial.println();
+          } 
+
           this->_modemSerial->write('\r');
           String nbSerialBuffer="@";
           int ct = 0;
+
           while (1) {
             if (this->_modemSerial->available()) {
               String response = this->_modemSerial->readStringUntil('\n');
               response.trim();
               nbSerialBuffer += response;
               if (response.indexOf("OK") != -1) {
-                // this->_modemSerial.flush();
-                Serial.println("Sent.");
-                // Serial.println(nbSerialBuffer);
-                break;
+                return true;
               }
             }
             else {
               ct++;
-              Serial.println("Wait response...");
-              delay(1000);
-              if (ct>15) {
+              if (ct>50) {
+                return false;
                 break;
               }
+              delay(100);
             }
             delay(0);
           }
@@ -173,23 +163,8 @@ class CMMC_NB_IoT
     bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false);
 
     bool sendMessage(String msg, uint8_t socketId = 0) {
-      this->_socketsMap.valueAt(socketId)->sendMessage(msg);
-    }
-
-
-    // bool sendMessage(String host, uint16_t port, uint8_t *payload, size_t len, int socketId) { 
-    //   USER_DEBUG_PRINTF("CMMC_NB_IoT::sendMessage(uint8*, size_t, uint8_t)\n");
-    //     char buffer[40] = {0}, resBuffer[40] = {0}; 
-    //     sprintf(buffer, "AT+NSOST=%d,%s,%d,%d,", socketId, host.c_str(), port, len); 
-    //     this->_modemSerial->write(buffer, strlen(buffer)); 
-    //       while (1) {
-    //         if (this->_modemSerial->available()) {
-    //           String response = this->_modemSerial->readStringUntil('\n');
-    //           response.trim(); 
-    //         }
-    //         delay(0);
-    //       } 
-    // }
+      return this->_socketsMap.valueAt(socketId)->sendMessage(msg);
+    } 
 
   private:
     DeviceInfo deviceInfo;
