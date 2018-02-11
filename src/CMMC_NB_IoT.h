@@ -53,8 +53,11 @@ class CMMC_NB_IoT
           while (len--) {
             uint8_t b = *(payload++);
             sprintf(t, "%02x", b);
+            Serial.print(t);
+            Serial.print("-");
             this->_modemSerial->write(t, 2);
           }
+          Serial.println();
 
           this->_modemSerial->write('\r');
           String nbSerialBuffer = "@";
@@ -71,7 +74,7 @@ class CMMC_NB_IoT
             }
             else {
               ct++;
-              if (ct > 500) {
+              if (ct > 50) {
                 return false;
                 break;
               }
@@ -90,15 +93,8 @@ class CMMC_NB_IoT
         uint8_t _socketId;
     };
 
-    CMMC_NB_IoT(Stream *s) {
-      this->_modemSerial = s;
-      this->_user_debug_cb = [](const char* s) { };
-      this->_user_onDeviceReboot_cb = [](void) -> void { };
-      this->_user_onConnecting_cb = [](void) -> void { };
-      this->_user_onConnected_cb = [](void) -> void { };
-      this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
-      this->_socketsMap = HashMap<String, Udp*, HASH_SIZE>();
-    };
+    CMMC_NB_IoT(Stream *s);
+
     typedef struct {
       char firmware[20];
       char imei[20];
@@ -112,51 +108,11 @@ class CMMC_NB_IoT
     void onConnecting(voidCb_t cb);
     void onConnected(voidCb_t cb);
     void onDeviceReboot(voidCb_t cb);
-    Stream* getModemSerial() {
-      return this->_modemSerial;
-    }
-
-    int createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV) {
-      int idx = this->_socketsMap.size();
-      String hashKey = String(hostname + ":" + port);
-      char resBuffer[40];
-      char buffer[40];
-      sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config);
-      const int MAX_RETRIES = 3;
-      int retries = 0;
-      bool finished = false;
-      while ( (retries < MAX_RETRIES) && !finished) {
-        this->_writeCommand(buffer, 10L, resBuffer, false);
-        String resp = String(resBuffer);
-        Serial.println(resp);
-        if (resp.indexOf("OK") != -1) {
-          if (!this->_socketsMap.contains(hashKey)) {
-            USER_DEBUG_PRINTF("socket id=%d has been created.\n", idx)
-            this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this);
-            // for (int i = 0 ; i < this->_socketsMap.size(); i++) {
-            //   USER_DEBUG_ PRINTF(String("KEY AT ") + i + String(" = ") + this->_socketsMap.keyAt(i));
-            // }
-          }
-          else {
-            USER_DEBUG_PRINTF(".......EXISTING HASH KEY\n");
-          }
-          finished = true;
-          break;
-        }
-        else {
-          retries++;
-          idx = -1;
-          USER_DEBUG_PRINTF("Create UDP Socket failed.\n");
-        }
-      }
-      return idx;
-    };
-
-    bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false);
-
-    bool sendMessage(String msg, uint8_t socketId = 0) {
-      return this->_socketsMap.valueAt(socketId)->sendMessage(msg);
-    }
+    Stream* getModemSerial(); 
+    int createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV);
+    bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false); 
+    bool sendMessage(String msg, uint8_t socketId = 0); 
+    bool sendMessage(uint8_t *msg, size_t len, uint8_t socketId = 0);
 
   private:
     DeviceInfo deviceInfo;
@@ -168,7 +124,5 @@ class CMMC_NB_IoT
     voidCb_t _user_onConnected_cb;
     Stream *_modemSerial;
     HashMap<String, Udp*, HASH_SIZE> _socketsMap;
-};
-
-
+}; 
 #endif //CMMC_NB_IoT_H

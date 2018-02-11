@@ -15,7 +15,7 @@ const uint8_t VERSION = 1;
 uint8_t header[2] = {0xfd, 0xfa};
 uint8_t tail[2] = {0x0d, 0x0a};
 
-CMMC_Packet packet(PROJECT, VERSION, header, tail); 
+static CMMC_Packet packet(PROJECT, VERSION, header, tail); 
 CMMC_NB_IoT nb(&modemSerial);
 
 void setup()
@@ -54,25 +54,31 @@ void setup()
     delay(1000);
   });
 
-  nb.onConnected([]() {
+  nb.onConnected([=]() {
     Serial.println("[user] NB-IoT Network connected");
-    int ct = 1;
+    uint32_t ct = 1;
     String _tmp = "";
     int sockId = nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::DISABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::DISABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11222, UDPConfig::DISABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11223, UDPConfig::DISABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11224, UDPConfig::DISABLE_RECV);
     while(1) {
-      _tmp += String(ct) + "-";
-      Serial.println(String("payload size = ") + (_tmp.length()) + String("byte"));
       uint32_t t = millis();
-      if (nb.sendMessage(_tmp, 0)) {
-        Serial.println(String("Data Sent .. ") + (millis() - t) + "ms"); 
-      }
-      else {
-        Serial.println(String("Send failed.. ") + (millis() - t) + "ms"); 
-      }
+      Serial.println(ct);
+      packet.setField(1, 0x11);
+      packet.setField(2, 0x22);
+      packet.setField(3, 0x33);
+      packet.setField(4, 0x44);
+      packet.setField(5, 0x55);
+      packet.setField(6, 0x66);
+      packet.setSensorBattery(ct);
+      packet.setSensorName("HELLO");
+      CMMC_PACKET_T *p = packet.getRawPacket();
+      p->data.field5 = 0x55;
+      nb.sendMessage((uint8_t*)p, packet.size());
+      // if (nb.sendMessage(_tmp, 0)) {
+      //   Serial.println(String("Data Sent .. ") + (millis() - t) + "ms"); 
+      // }
+      // else {
+      //   Serial.println(String("Send failed.. ") + (millis() - t) + "ms"); 
+      // }
       delay(2L*1000);
       ct++;
     }

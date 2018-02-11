@@ -54,6 +54,64 @@ void CMMC_NB_IoT::begin(Stream *s) {
   } 
 } 
 
+CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
+      this->_modemSerial = s;
+      this->_user_debug_cb = [](const char* s) { };
+      this->_user_onDeviceReboot_cb = [](void) -> void { };
+      this->_user_onConnecting_cb = [](void) -> void { };
+      this->_user_onConnected_cb = [](void) -> void { };
+      this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
+      this->_socketsMap = HashMap<String, Udp*, HASH_SIZE>();
+};
+
+Stream* CMMC_NB_IoT::getModemSerial() { return this->_modemSerial; }
+
+bool CMMC_NB_IoT::sendMessage(String msg, uint8_t socketId) {
+  return this->_socketsMap.valueAt(socketId)->sendMessage(msg);
+}
+
+bool CMMC_NB_IoT::sendMessage(uint8_t *msg, size_t len, uint8_t socketId) {
+  return this->_socketsMap.valueAt(socketId)->sendMessage(msg, len);
+}
+
+int CMMC_NB_IoT::createUdpSocket(String hostname, uint16_t port, UDPConfig config) {
+      int idx = this->_socketsMap.size();
+      String hashKey = String(hostname + ":" + port);
+      char resBuffer[40];
+      char buffer[40];
+      sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config);
+      const int MAX_RETRIES = 3;
+      int retries = 0;
+      bool finished = false;
+      while ( (retries < MAX_RETRIES) && !finished) {
+        this->_writeCommand(buffer, 10L, resBuffer, false);
+        String resp = String(resBuffer);
+        Serial.println(resp);
+        if (resp.indexOf("OK") != -1) {
+          if (!this->_socketsMap.contains(hashKey)) {
+            USER_DEBUG_PRINTF("socket id=%d has been created.\n", idx)
+            this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this);
+            // for (int i = 0 ; i < this->_socketsMap.size(); i++) {
+            //   USER_DEBUG_ PRINTF(String("KEY AT ") + i + String(" = ") + this->_socketsMap.keyAt(i));
+            // }
+          }
+          else {
+            USER_DEBUG_PRINTF(".......EXISTING HASH KEY\n");
+          }
+          finished = true;
+          break;
+        }
+        else {
+          retries++;
+          idx = -1;
+          USER_DEBUG_PRINTF("Create UDP Socket failed.\n");
+          USER_DEBUG_PRINTF("retrying create UDP Socket.");
+          delay(1000);
+        }
+      }
+      return idx;
+    };
+
 void CMMC_NB_IoT::onDeviceReady(deviceInfoCb_t cb) {
   this->_user_onDeviceReady_cb = cb;
 }

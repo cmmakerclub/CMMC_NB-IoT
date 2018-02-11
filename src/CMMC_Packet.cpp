@@ -1,12 +1,45 @@
 #include "CMMC_Packet.h"
 
-void CMMC_Packet::init() { }
 
 void CMMC_Packet::debug(cmmc_debug_cb_t cb) {
   if (cb != NULL) {
     this->_user_debug_cb = cb;
   }
 }
+
+void CMMC_Packet::setSensorBattery(uint32_t batt) {
+      Serial.print("set batt..");
+      Serial.println(batt, HEX);
+      (this->_packet).data.battery= batt;
+      this->updatePacketSum();
+}
+
+void CMMC_Packet::setField(uint8_t field, uint32_t val) {
+  if (field == 1) {
+      this->_packet.data.field1 = val;
+  }
+  else if (field == 2) {
+      this->_packet.data.field2 = val;
+  }
+  else if (field == 3) {
+      this->_packet.data.field3 = val;
+  }
+  else if (field == 4) {
+      this->_packet.data.field4 = val;
+  }
+  else if (field == 5) {
+      this->_packet.data.field5 = val;
+  }
+  else if (field == 6) {
+      this->_packet.data.field6 = val;
+  }
+  else {
+
+  }
+  this->updatePacketSum(); 
+  // this->dump();
+}
+
 CMMC_Packet::CMMC_Packet(uint8_t project, uint8_t version, uint8_t header[2], uint8_t footer[2]) {
   this->_packet.header[0] = header[0];
   this->_packet.header[1] = header[1];
@@ -37,7 +70,7 @@ void CMMC_Packet::toHexString(const u8 array[], size_t len, char buffer[])
   buffer[len * 2] = '\0';
 }
 
-const CMMC_PACKET_T* CMMC_Packet::getPacketPtr() {
+CMMC_PACKET_T* CMMC_Packet::getRawPacket() {
   return &this->_packet;
 }
 

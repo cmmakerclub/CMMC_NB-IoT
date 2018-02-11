@@ -20,19 +20,19 @@
 typedef struct __attribute((__packed__)) {
   uint8_t from[6];
   uint8_t to[6];
-  uint8_t type = 0;
-  uint32_t battery = 0x00;
-  uint32_t field1 = 0x00;
-  uint32_t field2 = 0x00;
-  uint32_t field3 = 0x00;
-  uint32_t field4 = 0x00;
-  uint32_t field5 = 0x00;
-  uint32_t field6 = 0x00;
+  uint8_t type = 0x09;
+  uint32_t battery = 0x0a;
+  uint32_t field1 = 0x01;
+  uint32_t field2 = 0x02;
+  uint32_t field3 = 0x03;
+  uint32_t field4 = 0x04;
+  uint32_t field5 = 0x05;
+  uint32_t field6 = 0x06;
   uint8_t nameLen = 0x00;
   char sensorName[16];
-  uint32_t ms = 0;
-  uint32_t sent_ms = 0;
-  uint32_t sum = 0;
+  uint32_t ms = 0x77;
+  uint32_t sent_ms = 0x78;
+  uint32_t sum = 0x79;
 } CMMC_SENSOR_T;
 
 typedef struct __attribute((__packed__)) {
@@ -49,9 +49,9 @@ typedef struct __attribute((__packed__)) {
   uint8_t tail[2] = {0x0d, 0x0a};
 } CMMC_PACKET_T;
 
-#ifndef CMMC_NO_ALIAS
-#define CMMC_Packet CMMC_Packet
-#endif 
+// #ifndef CMMC_NO_ALIAS
+// #define CMMC_Packet CMMC_Packet
+// #endif 
 
 typedef void (*cmmc_debug_cb_t)(const char* message);
 
@@ -63,38 +63,15 @@ class CMMC_Packet
     ~CMMC_Packet(); 
     void init();
     static void toHexString(const u8 array[], size_t len, char buffer[]); 
-    const CMMC_PACKET_T* getPacketPtr(); 
+    CMMC_PACKET_T* getRawPacket(); 
     uint32_t checksum(uint8_t* data, size_t len); 
     void updatePacketSum(); 
     void dump(); 
     void dump(const u8* data, size_t size);
     bool setSensorName(const char name[16]);
     bool setName(const char name[16]);
-    void setField(uint8_t field, uint32_t val) {
-      if (field == 1) {
-         this->_packet.data.field1 = val;
-      }
-      else if (field == 2) {
-         this->_packet.data.field2 = val;
-      }
-      else if (field == 3) {
-         this->_packet.data.field3 = val;
-      }
-      else if (field == 4) {
-         this->_packet.data.field4 = val;
-      }
-      else if (field == 5) {
-         this->_packet.data.field5 = val;
-      }
-      else if (field == 6) {
-         this->_packet.data.field6 = val;
-      }
-      else {
-
-      }
-      this->updatePacketSum(); 
-    }
-
+    void setSensorBattery(uint32_t batt); 
+    void setField(uint8_t field, uint32_t val); 
     void debug(cmmc_debug_cb_t);
     size_t size() {
       return sizeof(CMMC_PACKET_T);
@@ -103,7 +80,6 @@ class CMMC_Packet
     Stream *DEBUG_STREAM = 0;
     char debug_buffer[DEBUG_BUFFER_SIZE];
     CMMC_PACKET_T _packet;
-    CMMC_SENSOR_T *_sensorPtr;
     cmmc_debug_cb_t _user_debug_cb;
 };
 
