@@ -15,25 +15,39 @@ void CMMC_NB_IoT::onDebugMsg(debugCb_t cb) {
   this->_user_debug_cb = cb;
 }
 
+void CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *outStr) { 
+  int r = 0; 
+  while (r<retries) {
+    if (this->_writeCommand(at.c_str(), timeout, outStr) == 1) { 
+      break;
+    }
+    r++;
+    delay(1000);
+    USER_DEBUG_PRINTF("call %s no. [%d]\r\n", at.c_str(), r);
+  }
+  delay(50);
+}
+
 void CMMC_NB_IoT::begin(Stream *s) {
   if (s != 0) {
     this->_modemSerial = s;
   }
-  this->_writeCommand(F("AT"), 8L);
-  this->_user_onDeviceReboot_cb();
-  this->_writeCommand(F("AT+NRB"), 15L);
-  this->_writeCommand(F("AT+CFUN=1"), 10L);
-  this->_writeCommand(F("AT+CGSN=1"), 10L, this->deviceInfo.imei);  // IMEI
-  this->_writeCommand(F("AT+CGMR"), 10L, this->deviceInfo.firmware);  // firmware
-  this->_writeCommand(F("AT+CIMI"), 10L, this->deviceInfo.imsi);  // imsi sim 
-  this->_user_onDeviceReady_cb(this->deviceInfo);
-  this->_writeCommand(F("AT+CGATT=1"), 2L);
+
+  callCommand(F("AT"), 8);
+  callCommand(F("AT+NRB"), 15);
+  callCommand(F("AT+CFUN=1"), 15);
+  callCommand(F("AT+CGSN=1"), 8, 5, this->deviceInfo.imei);
+  callCommand(F("AT+CGMR"), 8, 5, this->deviceInfo.firmware);
+  callCommand(F("AT+CIMI"), 8, 5, this->deviceInfo.imsi);
+  this->_user_onDeviceReady_cb(this->deviceInfo); 
+  callCommand(F("AT+CGATT=1"), 8); 
   char buf[40];
   while (1) {
+    delay(10);
     this->_writeCommand(F("AT+CGATT?"), 2L, buf, 1);
     String ss = String(buf);
     if (ss.indexOf(F("+CGATT:1")) != -1) {
-      USER_DEBUG_PRINTF("%s\n", String("NB-IoT Network Connected.").c_str());
+      USER_DEBUG_PRINTF(">> %s\n", String("NB-IoT Network Connected.").c_str());
       if (this->_user_onConnected_cb) {
         this->_user_onConnected_cb();
       }
@@ -131,60 +145,46 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *outStr, boo
   uint32_t startMs = millis();
   uint32_t nextTimeout = startMs + timeoutMs;
   bool reqSuccess = 0;
-  at.trim();
-
-  const int MAX_RETRIES = 5;
-  int retries = 0;
-  bool finished = false;
-  while ((retries <= MAX_RETRIES) && !finished) {
-    delay(10);
-    if (!silent) {
-      USER_DEBUG_PRINTF("[%d] %s", retries, at.c_str());
-    }
-    this->_modemSerial->write(at.c_str(), at.length());
-    this->_modemSerial->write('\r');
-    String nbSerialBuffer = "@";
-    while (1) {
-      if (this->_modemSerial->available()) {
-        String response = this->_modemSerial->readStringUntil('\n');
-        response.trim();
-        nbSerialBuffer += response;
-        // USER_DEBUG_PRINTF("RESP: %s\n", response.c_str());
-        if (response.indexOf(F("OK")) != -1) {
-          if (!silent) {
-            String out = String(F(" (")) + String(millis() - startMs) + F("ms)");
-            USER_DEBUG_PRINTF("%s\n", out.c_str());
-          }
-          if (outStr != NULL) {
-            strcpy(outStr, nbSerialBuffer.c_str());
-          }
-          finished = true;
-          reqSuccess = 1;
-          this->_modemSerial->flush();
-          break;
+  at.trim(); 
+  if (!silent) {
+    USER_DEBUG_PRINTF(">> %s", at.c_str());
+  }
+  this->_modemSerial->write(at.c_str(), at.length());
+  this->_modemSerial->write('\r');
+  String nbSerialBuffer = "@";
+  while (1) {
+    if (this->_modemSerial->available()) {
+      String response = this->_modemSerial->readStringUntil('\n');
+      response.trim();
+      nbSerialBuffer += response;
+      // USER_DEBUG_PRINTF("RESP: %s\n", response.c_str());
+      if (response.indexOf(F("OK")) != -1) {
+        if (!silent) {
+          String out = String(F(" (")) + String(millis() - startMs) + F("ms)");
+          USER_DEBUG_PRINTF("%s\n", out.c_str());
         }
-        else if (response.indexOf(F("ERROR")) != -1) {
-            USER_DEBUG_PRINTF("\n");
-            // USER_DEBUG_PRINTF("\nGOT ERROR\n");
-            finished = 0;
-            break;
+        if (outStr != NULL) {
+          strcpy(outStr, nbSerialBuffer.c_str());
         }
-      }  // serial not available 
-      if ((millis() > nextTimeout) ) {
-        nextTimeout = + timeoutMs;
-        retries++;
-        reqSuccess = 0;
-        USER_DEBUG_PRINTF("\n.. wait timeout wit resp: ");
-        USER_DEBUG_PRINTF("%s\n", nbSerialBuffer.c_str());
-        if (retries <= MAX_RETRIES) {
-          USER_DEBUG_PRINTF("[RETRY => %d \n", retries);
-        }
-        delay(1000);
-        nbSerialBuffer = "@";
+        reqSuccess = 1;
+        this->_modemSerial->flush();
         break;
       }
-      delay(0);
+      else if (response.indexOf(F("ERROR")) != -1) {
+        USER_DEBUG_PRINTF("\n");
+        reqSuccess = 0;
+        break;
+      }
+    }  // serial not available
+    if ((millis() > nextTimeout) ) {
+      nextTimeout = + timeoutMs;
+      reqSuccess = 0;
+      USER_DEBUG_PRINTF("\n %s .. wait timeout wit resp: ", at.c_str());
+      USER_DEBUG_PRINTF("%s\n", nbSerialBuffer.c_str());
+      nbSerialBuffer = "@";
+      break;
     }
+    delay(0);
   }
   return reqSuccess;
 }

@@ -67,6 +67,7 @@ class CMMC_NB_IoT
             if (this->_modemSerial->available()) {
               String response = this->_modemSerial->readStringUntil('\n');
               response.trim();
+              Serial.println(response); 
               nbSerialBuffer += response;
               if (response.indexOf("OK") != -1) {
                 return true;
@@ -112,7 +113,8 @@ class CMMC_NB_IoT
     int createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV);
     bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false); 
     bool sendMessage(String msg, uint8_t socketId = 0); 
-    bool sendMessage(uint8_t *msg, size_t len, uint8_t socketId = 0);
+    bool sendMessage(uint8_t *msg, size_t len, uint8_t socketId = 0); 
+    void callCommand(String at, uint8_t timeout = 10, int retries = 3, char *outStr = NULL);
 
   private:
     DeviceInfo deviceInfo;
