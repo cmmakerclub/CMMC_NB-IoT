@@ -114,7 +114,7 @@ class CMMC_NB_IoT
     bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false); 
     bool sendMessage(String msg, uint8_t socketId = 0); 
     bool sendMessage(uint8_t *msg, size_t len, uint8_t socketId = 0); 
-    void callCommand(String at, uint8_t timeout = 10, int retries = 3, char *outStr = NULL);
+    void callCommand(String at, uint8_t timeout = 10, int retries = 5, char *outStr = NULL);
 
   private:
     DeviceInfo deviceInfo;

@@ -1,13 +1,14 @@
 #define DEBUG_BUFFER_SIZE 1000
 
 #include <Arduino.h>
+#include "ESP8266WiFi.h"
 #include <CMMC_NB_IoT.h>
 #include <CMMC_Packet.h> 
 #include <SoftwareSerial.h>
 
 #define RX 14
 #define TX 12
-static SoftwareSerial modemSerial(RX, TX, false, 256);
+static SoftwareSerial modemSerial(RX, TX, false, 128);
 
 const uint8_t PROJECT = 1;
 const uint8_t VERSION = 1;
@@ -18,14 +19,23 @@ uint8_t tail[2] = {0x0d, 0x0a};
 static CMMC_Packet packet(PROJECT, VERSION, header, tail); 
 CMMC_NB_IoT nb(&modemSerial);
 
-void setup()
-{
+extern "C" {
+#include "user_interface.h"
+}
+void setup(){
+  // system_update_cpu_freq(80);
   Serial.begin(57600);
   modemSerial.begin(9600);
+  Serial.println(ESP.getCpuFreqMHz());
+  Serial.println(modemSerial.baudRate());
 
   Serial.setTimeout(4); 
-  modemSerial.setTimeout(4);
-  
+  modemSerial.setTimeout(8);
+
+  WiFi.disconnect();
+  WiFi.mode(WIFI_OFF);
+  WiFi.forceSleepBegin(); 
+
   delay(10);
   Serial.println();
   Serial.println(F("Starting application..."));
@@ -59,6 +69,7 @@ void setup()
     uint32_t ct = 1;
     String _tmp = "";
     int sockId = nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::DISABLE_RECV);
+    delay(100);
     while(1) {
       uint32_t t = millis();
       Serial.println(ct);

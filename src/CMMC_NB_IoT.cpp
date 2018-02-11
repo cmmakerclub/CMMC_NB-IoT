@@ -23,7 +23,7 @@ void CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *out
     }
     r++;
     delay(1000);
-    USER_DEBUG_PRINTF("call %s no. [%d]\r\n", at.c_str(), r);
+    USER_DEBUG_PRINTF("%s [%d]\n", r+1, at.c_str());
   }
   delay(50);
 }
@@ -33,18 +33,18 @@ void CMMC_NB_IoT::begin(Stream *s) {
     this->_modemSerial = s;
   }
 
-  callCommand(F("AT"), 8);
+  callCommand(F("AT"), 10);
   callCommand(F("AT+NRB"), 15);
   callCommand(F("AT+CFUN=1"), 15);
-  callCommand(F("AT+CGSN=1"), 8, 5, this->deviceInfo.imei);
-  callCommand(F("AT+CGMR"), 8, 5, this->deviceInfo.firmware);
-  callCommand(F("AT+CIMI"), 8, 5, this->deviceInfo.imsi);
+  callCommand(F("AT+CGSN=1"), 10, 5, this->deviceInfo.imei);
+  callCommand(F("AT+CGMR"), 10, 5, this->deviceInfo.firmware);
+  callCommand(F("AT+CIMI"), 10, 5, this->deviceInfo.imsi);
   this->_user_onDeviceReady_cb(this->deviceInfo);
-  callCommand(F("AT+CGATT=1"), 8);
+  callCommand(F("AT+CGATT=1"), 10, 100);
   char buf[40];
   bool nbNetworkConnected = false;
   while (!nbNetworkConnected) {
-    this->_writeCommand(F("AT+CGATT?"), 2L, buf, 1);
+    this->_writeCommand(F("AT+CGATT?"), 10L, buf, 1);
     nbNetworkConnected = String(buf).indexOf(F("+CGATT:1")) != -1; 
     USER_DEBUG_PRINTF("[%lu] Connecting to NB-IoT Network \n", millis());
     if (this->_user_onConnecting_cb) {
@@ -143,6 +143,7 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *outStr, boo
   if (!silent) {
     USER_DEBUG_PRINTF(">> %s", at.c_str());
   }
+  // this->_modemSerial->print(at.c_str());
   this->_modemSerial->write(at.c_str(), at.length());
   this->_modemSerial->write('\r');
   String nbSerialBuffer = "@";
@@ -161,7 +162,6 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *outStr, boo
           strcpy(outStr, nbSerialBuffer.c_str());
         }
         reqSuccess = 1;
-        this->_modemSerial->flush();
         break;
       }
       else if (response.indexOf(F("ERROR")) != -1) {
