@@ -45,15 +45,12 @@ void CMMC_NB_IoT::begin(Stream *s) {
   bool nbNetworkConnected = false;
   while (!nbNetworkConnected) {
     this->_writeCommand(F("AT+CGATT?"), 2L, buf, 1);
-    String ss = String(buf);
-    nbNetworkConnected = ss.indexOf(F("+CGATT:1")) != -1;
-
-    String out = String("[") + millis() + "] Connecting NB-IoT Network...";
-    USER_DEBUG_PRINTF("%s\n", out.c_str());
+    nbNetworkConnected = String(buf).indexOf(F("+CGATT:1")) != -1; 
+    USER_DEBUG_PRINTF("[%lu] Connecting to NB-IoT Network \n", millis());
     if (this->_user_onConnecting_cb) {
       this->_user_onConnecting_cb();
     }
-    delay(100);
+    delay(10);
   }
   USER_DEBUG_PRINTF(">> %s\n", String("NB-IoT Network Connected.").c_str());
   if (this->_user_onConnected_cb) {
