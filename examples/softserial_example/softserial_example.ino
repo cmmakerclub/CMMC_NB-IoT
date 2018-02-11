@@ -24,6 +24,8 @@ extern "C" {
 }
 void setup(){
   // system_update_cpu_freq(80);
+  pinMode(2, OUTPUT);
+  digitalWrite(2, LOW);
   Serial.begin(57600);
   modemSerial.begin(9600);
   Serial.println(ESP.getCpuFreqMHz());
@@ -89,7 +91,9 @@ void setup(){
       // else {
       //   Serial.println(String("Send failed.. ") + (millis() - t) + "ms"); 
       // }
-      delay(2L*1000);
+      delay(20*1000); 
+      digitalWrite(2, HIGH);
+      ESP.deepSleep(10e5, WAKE_RF_DISABLED);
       ct++;
     }
   });

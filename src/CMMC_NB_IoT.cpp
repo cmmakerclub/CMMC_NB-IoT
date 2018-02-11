@@ -15,10 +15,12 @@ void CMMC_NB_IoT::onDebugMsg(debugCb_t cb) {
   this->_user_debug_cb = cb;
 }
 
-void CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *outStr) {
+bool CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *outStr) {
   int r = 0;
+  int ok = false;
   while (r < retries) {
     if (this->_writeCommand(at.c_str(), timeout, outStr) == 1) {
+      ok = true;
       break;
     }
     r++;
@@ -26,6 +28,7 @@ void CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *out
     USER_DEBUG_PRINTF("%s [%d]\n", r+1, at.c_str());
   }
   delay(50);
+  return ok;
 }
 
 void CMMC_NB_IoT::begin(Stream *s) {
@@ -86,14 +89,7 @@ int CMMC_NB_IoT::createUdpSocket(String hostname, uint16_t port, UDPConfig confi
   char resBuffer[40];
   char buffer[40];
   sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config);
-  const int MAX_RETRIES = 3;
-  int retries = 0;
-  bool finished = false;
-  while ( (retries < MAX_RETRIES) && !finished) {
-    this->_writeCommand(buffer, 10L, resBuffer, false);
-    String resp = String(resBuffer);
-    // Serial.println(resp);
-    if (resp.indexOf("OK") != -1) {
+  if (callCommand(buffer, 10, 5, resBuffer)) {
       if (!this->_socketsMap.contains(hashKey)) {
         USER_DEBUG_PRINTF("socket id=%d has been created.\n", idx)
         this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this);
@@ -103,17 +99,11 @@ int CMMC_NB_IoT::createUdpSocket(String hostname, uint16_t port, UDPConfig confi
       }
       else {
         USER_DEBUG_PRINTF(".......EXISTING HASH KEY\n");
-      }
-      finished = true;
-      break;
-    }
-    else {
-      retries++;
-      idx = -1;
+      } 
+  }
+  else {
       USER_DEBUG_PRINTF("Create UDP Socket failed.\n");
-      USER_DEBUG_PRINTF("retrying create UDP Socket.");
-      delay(1000);
-    }
+      idx = -1;
   }
   return idx;
 };
