@@ -15,10 +15,10 @@ void CMMC_NB_IoT::onDebugMsg(debugCb_t cb) {
   this->_user_debug_cb = cb;
 }
 
-void CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *outStr) { 
-  int r = 0; 
-  while (r<retries) {
-    if (this->_writeCommand(at.c_str(), timeout, outStr) == 1) { 
+void CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *outStr) {
+  int r = 0;
+  while (r < retries) {
+    if (this->_writeCommand(at.c_str(), timeout, outStr) == 1) {
       break;
     }
     r++;
@@ -39,28 +39,25 @@ void CMMC_NB_IoT::begin(Stream *s) {
   callCommand(F("AT+CGSN=1"), 8, 5, this->deviceInfo.imei);
   callCommand(F("AT+CGMR"), 8, 5, this->deviceInfo.firmware);
   callCommand(F("AT+CIMI"), 8, 5, this->deviceInfo.imsi);
-  this->_user_onDeviceReady_cb(this->deviceInfo); 
-  callCommand(F("AT+CGATT=1"), 8); 
+  this->_user_onDeviceReady_cb(this->deviceInfo);
+  callCommand(F("AT+CGATT=1"), 8);
   char buf[40];
-  while (1) {
-    delay(10);
+  bool nbNetworkConnected = false;
+  while (!nbNetworkConnected) {
     this->_writeCommand(F("AT+CGATT?"), 2L, buf, 1);
     String ss = String(buf);
-    if (ss.indexOf(F("+CGATT:1")) != -1) {
-      USER_DEBUG_PRINTF(">> %s\n", String("NB-IoT Network Connected.").c_str());
-      if (this->_user_onConnected_cb) {
-        this->_user_onConnected_cb();
-      }
-      break;
-    }
-    else {
-      String out = String("[") + millis() + "] Connecting NB-IoT Network...";
-      USER_DEBUG_PRINTF("%s\n", out.c_str());
-      if (this->_user_onConnecting_cb) {
-        this->_user_onConnecting_cb();
-      }
+    nbNetworkConnected = ss.indexOf(F("+CGATT:1")) != -1;
+
+    String out = String("[") + millis() + "] Connecting NB-IoT Network...";
+    USER_DEBUG_PRINTF("%s\n", out.c_str());
+    if (this->_user_onConnecting_cb) {
+      this->_user_onConnecting_cb();
     }
     delay(100);
+  }
+  USER_DEBUG_PRINTF(">> %s\n", String("NB-IoT Network Connected.").c_str());
+  if (this->_user_onConnected_cb) {
+    this->_user_onConnected_cb();
   }
 }
 
@@ -145,7 +142,7 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *outStr, boo
   uint32_t startMs = millis();
   uint32_t nextTimeout = startMs + timeoutMs;
   bool reqSuccess = 0;
-  at.trim(); 
+  at.trim();
   if (!silent) {
     USER_DEBUG_PRINTF(">> %s", at.c_str());
   }
