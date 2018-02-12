@@ -53,11 +53,11 @@ class CMMC_NB_IoT
           while (len--) {
             uint8_t b = *(payload++);
             sprintf(t, "%02x", b);
-            Serial.print(t);
-            Serial.print("-");
+            // Serial.print(t);
+            // Serial.print("-");
             this->_modemSerial->write(t, 2);
           }
-          Serial.println();
+          // Serial.println();
 
           this->_modemSerial->write('\r');
           String nbSerialBuffer = "@";
@@ -67,7 +67,7 @@ class CMMC_NB_IoT
             if (this->_modemSerial->available()) {
               String response = this->_modemSerial->readStringUntil('\n');
               response.trim();
-              Serial.println(response); 
+              // Serial.println(response); 
               nbSerialBuffer += response;
               if (response.indexOf("OK") != -1) {
                 return true;
