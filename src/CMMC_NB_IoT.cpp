@@ -23,11 +23,13 @@ bool CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *out
       ok = true;
       break;
     }
-    r++;
-    delay(1000);
-    USER_DEBUG_PRINTF("%s [%d]\n", r+1, at.c_str());
+    else {
+      r++;
+      delay(500);
+      USER_DEBUG_PRINTF("%s[%d]\n", at.c_str(), r+1); 
+    }
+    delay(50);
   }
-  delay(50);
   return ok;
 }
 
@@ -163,12 +165,15 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *outStr, boo
     if ((millis() > nextTimeout) ) {
       nextTimeout = + timeoutMs;
       reqSuccess = 0;
-      USER_DEBUG_PRINTF("\n %s .. wait timeout wit resp: ", at.c_str());
+      USER_DEBUG_PRINTF("\n%s .. wait timeout wit resp: ", at.c_str());
       USER_DEBUG_PRINTF("%s\n", nbSerialBuffer.c_str());
       nbSerialBuffer = "@";
       break;
     }
-    delay(0);
+    else {
+        delay(10); 
+        // Serial.println("ELSE");
+    }
   }
   return reqSuccess;
 }

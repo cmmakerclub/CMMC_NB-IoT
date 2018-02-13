@@ -43,8 +43,7 @@ void setup(){
   WiFi.mode(WIFI_OFF);
   WiFi.forceSleepBegin(); 
 
-  delay(10);
-  delay(1000);
+  delay(50);
   Serial.println();
   Serial.println(F("Starting application..."));
 
