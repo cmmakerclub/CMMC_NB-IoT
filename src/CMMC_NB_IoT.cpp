@@ -1,15 +1,19 @@
 #include "CMMC_NB_IoT.h"
 
-// CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
-//   this->_modemSerial = s;
-//   this->_user_debug_cb = [](const char* s) { };
-//   this->_user_onDeviceReboot_cb = [](void) -> void { };
-//   this->_user_onConnecting_cb = [](void) -> void { };
-//   this->_user_onConnected_cb = [](void) -> void { };
-//   this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
-// };
 
-CMMC_NB_IoT::~CMMC_NB_IoT() {};
+CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
+  this->_modemSerial = s;
+  this->_user_debug_cb = [](const char* s) { };
+  this->_user_onDeviceReboot_cb = [](void) -> void { };
+  this->_user_onConnecting_cb = [](void) -> void { };
+  this->_user_onConnected_cb = [](void) -> void { };
+  this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
+  this->_socketsMap = HashMap<String, Udp*, HASH_SIZE>();
+};
+
+CMMC_NB_IoT::~CMMC_NB_IoT() {
+
+};
 
 void CMMC_NB_IoT::onDebugMsg(debugCb_t cb) {
   this->_user_debug_cb = cb;
@@ -62,16 +66,6 @@ void CMMC_NB_IoT::begin(Stream *s) {
     this->_user_onConnected_cb();
   }
 }
-
-CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
-  this->_modemSerial = s;
-  this->_user_debug_cb = [](const char* s) { };
-  this->_user_onDeviceReboot_cb = [](void) -> void { };
-  this->_user_onConnecting_cb = [](void) -> void { };
-  this->_user_onConnected_cb = [](void) -> void { };
-  this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
-  this->_socketsMap = HashMap<String, Udp*, HASH_SIZE>();
-};
 
 Stream* CMMC_NB_IoT::getModemSerial() {
   return this->_modemSerial;

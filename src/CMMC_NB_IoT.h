@@ -16,7 +16,7 @@ typedef void (*voidCb_t)(void);
 #define HASH_SIZE 7
 
 #ifndef DEBUG_BUFFER_SIZE
-#define DEBUG_BUFFER_SIZE 64
+#define DEBUG_BUFFER_SIZE 128
 #endif
 
 
@@ -97,9 +97,9 @@ class CMMC_NB_IoT
     CMMC_NB_IoT(Stream *s);
 
     typedef struct {
-      char firmware[20];
-      char imei[20];
-      char imsi[20];
+      char firmware[180];
+      char imei[40];
+      char imsi[30];
     } DeviceInfo;
     typedef void(*deviceInfoCb_t)(DeviceInfo);
     ~CMMC_NB_IoT();
