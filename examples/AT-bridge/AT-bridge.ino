@@ -4,7 +4,9 @@
 
 #define RX 14
 #define TX 12
-SoftwareSerial swSerial(RX, TX, false, 128);
+
+
+SoftwareSerial swSerial(RX, TX, false);
 
 
 void setup()

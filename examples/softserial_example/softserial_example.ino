@@ -27,7 +27,6 @@ extern "C" {
 }
 
 void setup(){
-  // system_update_cpu_freq(80);
   led.init();
   shield.init(); 
 
