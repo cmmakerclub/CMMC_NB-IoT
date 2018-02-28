@@ -44,5 +44,5 @@
 
 
 
-## Dependencies (provided)
+## Dependencies
  - https://github.com/PaulStoffregen/AltSoftSerial
