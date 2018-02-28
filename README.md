@@ -32,7 +32,7 @@
         // Serial.print(msg);
       });
 
-      nb.init();
+      nb.begin();
     }
 
     void loop()
