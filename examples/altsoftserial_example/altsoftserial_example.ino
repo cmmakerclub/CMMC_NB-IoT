@@ -41,12 +41,8 @@ void setup()
 
   nb.onConnected([]() {
     Serial.println("[user] NB-IoT Network connected");
-  });
-
-  nb.onDebugMsg([](const char* msg) {
-    // Serial.print(msg);
-  });
-
+  }); 
+  
   nb.begin();
 }
 

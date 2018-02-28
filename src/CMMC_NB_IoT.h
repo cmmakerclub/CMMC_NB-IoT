@@ -8,29 +8,61 @@
 typedef void (*debugCb_t)(const char* msg);
 typedef void (*voidCb_t)(void);
 
-#define USER_DEBUG_PRINTF(fmt, args...) { \
-    sprintf(this->debug_buffer, fmt, ## args); \
-    _user_debug_cb(this->debug_buffer); \
-  }
-
 #define HASH_SIZE 7
 
-#ifndef DEBUG_BUFFER_SIZE
-#define DEBUG_BUFFER_SIZE 128
-#endif
-
+// #ifndef DEBUG_BUFFER_SIZE
+// #define DEBUG_BUFFER_SIZE 128
+// #endif 
 
 enum UDPConfig {
   DISABLE_RECV = 0,
   ENABLE_RECV = 1,
 };
 
-
+class Udp;
 
 class CMMC_NB_IoT
 {
   public:
-    class Udp {
+    CMMC_NB_IoT(Stream *s);
+
+    typedef struct {
+      char firmware[180];
+      char imei[40];
+      char imsi[30];
+    } DeviceInfo;
+
+    void setDebugStream(Stream* stream) { _diagStream = stream; }
+
+    typedef void(*deviceInfoCb_t)(DeviceInfo);
+    ~CMMC_NB_IoT();
+    // void onDebugMsg(debugCb_t cb);
+    void begin(Stream *s = 0);
+    void onDeviceReady(deviceInfoCb_t cb);
+    void onConnecting(voidCb_t cb);
+    void onConnected(voidCb_t cb);
+    void onDeviceReboot(voidCb_t cb);
+    Stream* getModemSerial(); 
+    int createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV);
+    bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false); 
+    bool sendMessage(String msg, uint8_t socketId = 0); 
+    bool sendMessage(uint8_t *msg, size_t len, uint8_t socketId = 0); 
+    bool callCommand(String at, uint8_t timeout = 10, int retries = 5, char *outStr = NULL);
+
+  private:
+      // The (optional) stream to show debug information.
+    Stream* _diagStream;
+    bool _disableDiag; 
+    DeviceInfo deviceInfo;
+    deviceInfoCb_t _user_onDeviceReady_cb;
+    voidCb_t _user_onDeviceReboot_cb;
+    voidCb_t _user_onConnecting_cb;
+    voidCb_t _user_onConnected_cb;
+    Stream *_modemSerial;
+    HashMap<String, Udp*, HASH_SIZE> _socketsMap;
+}; 
+
+   class Udp {
       public:
         Udp(String host, uint16_t port, uint8_t socketId, CMMC_NB_IoT *modem) {
           this->_host = host;
@@ -94,37 +126,4 @@ class CMMC_NB_IoT
         uint8_t _socketId;
     };
 
-    CMMC_NB_IoT(Stream *s);
-
-    typedef struct {
-      char firmware[180];
-      char imei[40];
-      char imsi[30];
-    } DeviceInfo;
-    typedef void(*deviceInfoCb_t)(DeviceInfo);
-    ~CMMC_NB_IoT();
-    void onDebugMsg(debugCb_t cb);
-    void begin(Stream *s = 0);
-    void onDeviceReady(deviceInfoCb_t cb);
-    void onConnecting(voidCb_t cb);
-    void onConnected(voidCb_t cb);
-    void onDeviceReboot(voidCb_t cb);
-    Stream* getModemSerial(); 
-    int createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV);
-    bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false); 
-    bool sendMessage(String msg, uint8_t socketId = 0); 
-    bool sendMessage(uint8_t *msg, size_t len, uint8_t socketId = 0); 
-    bool callCommand(String at, uint8_t timeout = 10, int retries = 5, char *outStr = NULL);
-
-  private:
-    DeviceInfo deviceInfo;
-    debugCb_t _user_debug_cb;
-    char debug_buffer[DEBUG_BUFFER_SIZE];
-    deviceInfoCb_t _user_onDeviceReady_cb;
-    voidCb_t _user_onDeviceReboot_cb;
-    voidCb_t _user_onConnecting_cb;
-    voidCb_t _user_onConnected_cb;
-    Stream *_modemSerial;
-    HashMap<String, Udp*, HASH_SIZE> _socketsMap;
-}; 
 #endif //CMMC_NB_IoT_H

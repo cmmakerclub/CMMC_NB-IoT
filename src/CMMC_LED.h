@@ -14,7 +14,6 @@ class CMMC_LED
       // constructor
       CMMC_LED(int led = LED_BUILTIN, bool state = LOW); 
       ~CMMC_LED() {}
-
       void init();
       void toggle(); 
       void set(uint8_t status); 

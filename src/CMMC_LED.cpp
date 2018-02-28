@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 CMMC_LED::CMMC_LED(int led, bool state) {
-  auto blank = [](const char* message) {};
+  // auto blank = [](const char* message) {};
   _led = led;
   _led_state = state;
 }

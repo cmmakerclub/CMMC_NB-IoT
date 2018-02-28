@@ -8,7 +8,6 @@
 
 SoftwareSerial swSerial(RX, TX, false);
 
-
 void setup()
 { 
   Serial.begin(57600);

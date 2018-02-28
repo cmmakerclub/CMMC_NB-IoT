@@ -13,13 +13,16 @@ def before_upload(source, target, env):
 
 def after_upload(source, target, env):
     print "after_upload"
-    #shutil.rmtree(".src-dev/CMMC_NB-IoT")
 
 def before_build(source, target, env):
     print "before_build"
 
 if not os.path.exists(".src-dev/CMMC_NB-IoT"):
     os.makedirs(".src-dev/CMMC_NB-IoT")
+else:
+    shutil.rmtree(".src-dev/CMMC_NB-IoT")
+    os.makedirs(".src-dev/CMMC_NB-IoT")
+
 for file in glob.iglob('src/*.*'):
     print 'Copied file %s' % (file)
     shutil.copy2(file, ".src-dev/CMMC_NB-IoT/")

@@ -58,9 +58,11 @@ void setup()
     }
   });
 
-  nb.onDebugMsg([](const char* msg) {
-    Serial.print(msg);
-  });
+  nb.setDebugStream(&Serial);
+
+  // nb.onDebugMsg([](const char* msg) {
+  //   Serial.print(msg);
+  // });
 
   nb.begin();
 }

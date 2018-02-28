@@ -112,10 +112,6 @@ void setup(){
     }
   });
 
-  nb.onDebugMsg([](const char* msg) {
-    Serial.print(msg);
-  });
-
   nb.begin();
 }
 
