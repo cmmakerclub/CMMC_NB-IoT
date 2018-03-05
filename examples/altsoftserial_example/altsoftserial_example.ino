@@ -4,9 +4,12 @@
 
 AltSoftSerial nbSerial;
 CMMC_NB_IoT nb(&nbSerial);
+#define NB_PWR_PIN 15
 
 void setup()
 {
+  pinMode(NB_PWR_PIN, OUTPUT);
+  digitalWrite(NB_PWR_PIN, HIGH); 
   Serial.begin(57600);
   Serial.setTimeout(4);
 
@@ -42,7 +45,7 @@ void setup()
   nb.onConnected([]() {
     Serial.println("[user] NB-IoT Network connected");
   }); 
-  
+
   nb.begin();
 }
 

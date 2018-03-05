@@ -2,14 +2,17 @@
 #include <CMMC_NB_IoT.h>
 #include <SoftwareSerial.h>
 
-#define RX 14
-#define TX 12
+#define RX 12
+#define TX 14
 
 
 SoftwareSerial swSerial(RX, TX, false);
 
 void setup()
 { 
+  pinMode(15, OUTPUT);
+  digitalWrite(15, HIGH);
+  delay(100);
   Serial.begin(57600);
   swSerial.begin(9600);
   Serial.println();

@@ -19,9 +19,9 @@ def before_build(source, target, env):
 
 if not os.path.exists(".src-dev/CMMC_NB-IoT"):
     os.makedirs(".src-dev/CMMC_NB-IoT")
-else:
-    shutil.rmtree(".src-dev/CMMC_NB-IoT")
-    os.makedirs(".src-dev/CMMC_NB-IoT")
+# else:
+#     shutil.rmtree(".src-dev/CMMC_NB-IoT")
+#     os.makedirs(".src-dev/CMMC_NB-IoT")
 
 for file in glob.iglob('src/*.*'):
     print 'Copied file %s' % (file)

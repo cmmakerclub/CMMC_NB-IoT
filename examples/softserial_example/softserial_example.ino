@@ -7,8 +7,8 @@
 #include <CMMC_LED.h>
 #include <SoftwareSerial.h>
 
-#define RX 12
-#define TX 14
+#define RX 14
+#define TX 12
 static SoftwareSerial modemSerial(RX, TX, false, 128);
 
 const uint8_t PROJECT = 1;
@@ -27,20 +27,26 @@ extern "C" {
 }
 
 void setup(){
-  led.init();
-  shield.init(); 
+  WiFi.disconnect();
+  WiFi.mode(WIFI_OFF);
+  WiFi.forceSleepBegin();
 
   Serial.begin(57600);
   modemSerial.begin(9600);
+  delay(100);
+
+  Serial.println(F("......"));
+
+  led.init();
+  shield.init(); 
+
   Serial.println(ESP.getCpuFreqMHz());
   Serial.println(modemSerial.baudRate());
 
   Serial.setTimeout(4); 
   modemSerial.setTimeout(8);
 
-  WiFi.disconnect();
-  WiFi.mode(WIFI_OFF);
-  WiFi.forceSleepBegin(); 
+ 
 
   delay(50);
   Serial.println();
@@ -67,7 +73,7 @@ void setup(){
   });
 
   nb.onConnecting([]() {
-    // Serial.println("[user] Connecting to NB-IoT Network...");
+    Serial.println("[user] Connecting to NB-IoT Network...");
     led.toggle();
     delay(1000);
   });

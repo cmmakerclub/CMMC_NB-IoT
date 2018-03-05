@@ -10,10 +10,6 @@ typedef void (*voidCb_t)(void);
 
 #define HASH_SIZE 7
 
-// #ifndef DEBUG_BUFFER_SIZE
-// #define DEBUG_BUFFER_SIZE 128
-// #endif 
-
 enum UDPConfig {
   DISABLE_RECV = 0,
   ENABLE_RECV = 1,
@@ -28,15 +24,14 @@ class CMMC_NB_IoT
 
     typedef struct {
       char firmware[180];
-      char imei[40];
-      char imsi[30];
+      char imei[60];
+      char imsi[60];
     } DeviceInfo;
 
     void setDebugStream(Stream* stream) { _diagStream = stream; }
 
     typedef void(*deviceInfoCb_t)(DeviceInfo);
     ~CMMC_NB_IoT();
-    // void onDebugMsg(debugCb_t cb);
     void begin(Stream *s = 0);
     void onDeviceReady(deviceInfoCb_t cb);
     void onConnecting(voidCb_t cb);
@@ -50,7 +45,6 @@ class CMMC_NB_IoT
     bool callCommand(String at, uint8_t timeout = 10, int retries = 5, char *outStr = NULL);
 
   private:
-      // The (optional) stream to show debug information.
     Stream* _diagStream;
     bool _disableDiag; 
     DeviceInfo deviceInfo;
