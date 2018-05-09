@@ -5,3 +5,4 @@ lib-dev
 .vscode/launch.json
 .src-dev
 .vscode/*.db
+.vscode/.browse.c_cpp.db*

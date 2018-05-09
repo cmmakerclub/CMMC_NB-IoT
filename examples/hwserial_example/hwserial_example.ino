@@ -10,15 +10,12 @@ void setup()
   Serial2.begin(9600);
 
   Serial.setTimeout(4); 
-  Serial2.setTimeout(4);
-  
+  Serial2.setTimeout(4); 
   delay(10);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB
-  }
   Serial.println();
   Serial.println(F("Starting application..."));
 
+  nb.setDebugStream(&Serial); 
   nb.onDeviceReboot([]() {
     Serial.println(F("[user] Device being rebooted."));
   });
@@ -31,11 +28,12 @@ void setup()
     Serial.println(device.firmware);
     Serial.print(F("# IMSI SIM-->  "));
     Serial.println(device.imsi);
+	// nb.activate();
   });
 
   nb.onConnecting([]() {
-    // Serial.println("[user] Connecting to NB-IoT Network...");
-    delay(1000);
+	  Serial.println("Connecting to NB-IoT...");
+	  delay(1000);
   });
 
   nb.onConnected([]() {
@@ -57,12 +55,6 @@ void setup()
       ct++;
     }
   });
-
-  nb.setDebugStream(&Serial);
-
-  // nb.onDebugMsg([](const char* msg) {
-  //   Serial.print(msg);
-  // });
 
   nb.begin();
 }

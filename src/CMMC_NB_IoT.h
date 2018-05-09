@@ -3,9 +3,8 @@
 
 #define SERIAL_BUFFER_SIZE 256
 #include <Arduino.h>
-#include <HashMap.h>
+#include <HashMap.h> 
 
-typedef void (*debugCb_t)(const char* msg);
 typedef void (*voidCb_t)(void);
 
 #define HASH_SIZE 7
@@ -37,6 +36,8 @@ class CMMC_NB_IoT
     void onConnecting(voidCb_t cb);
     void onConnected(voidCb_t cb);
     void onDeviceReboot(voidCb_t cb);
+    void activate();
+    // void deactivate();
     Stream* getModemSerial(); 
     int createUdpSocket(String hostname, uint16_t port, UDPConfig config = DISABLE_RECV);
     bool _writeCommand(String at, uint32_t timeoutMs, char *s = NULL, bool silent = false); 
