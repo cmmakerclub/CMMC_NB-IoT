@@ -1,5 +1,4 @@
 #include "CMMC_NB_IoT.h"
-#define DEBUG
 
 #ifdef DEBUG
 #define debugPrintLn(...) { if (!this->_disableDiag && this->_diagStream) this->_diagStream->println(__VA_ARGS__); }
@@ -7,7 +6,7 @@
 #warning "Debug mode is ON"
 #else
 #define debugPrintLn(...)
-#define debugPrint(...) 
+#define debugPrint(...)
 #endif
 
 #define _5s 5
@@ -22,6 +21,7 @@ CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
   this->_user_onConnected_cb = [](void) -> void { };
   this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
   this->_socketsMap = HashMap<String, Udp*, HASH_SIZE>();
+  this->_deviceNeverConnected = true;
 };
 
 CMMC_NB_IoT::~CMMC_NB_IoT() {
@@ -37,8 +37,7 @@ bool CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *out
     }
     else {
       r++;
-      Serial.print(at.c_str());
-      Serial.println();
+      debugPrintLn(at.c_str());
       delay(500);
     }
     delay(50);
@@ -48,35 +47,41 @@ bool CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *out
 }
 
 void CMMC_NB_IoT::activate() {
-   while(!callCommand(F("AT+CGATT=1"), _10s, 100));
-  char buf[40];
-  bool nbNetworkConnected = false;
-  while (!nbNetworkConnected) {
-    this->_writeCommand(F("AT+CGATT?"), 10L, buf, 1);
-    nbNetworkConnected = String(buf).indexOf(F("+CGATT:1")) != -1; 
-    if (this->_user_onConnecting_cb) {
-      this->_user_onConnecting_cb();
-    }
-    delay(10);
-  }
-  if (this->_user_onConnected_cb) {
-    this->_user_onConnected_cb();
-  } 
+  while (!callCommand(F("AT+CGATT=1"), _10s, 100));
 }
 
 void CMMC_NB_IoT::begin(Stream *s) {
   if (s != 0) {
     this->_modemSerial = s;
   }
-  debugPrintLn("Debug mode is ON"); 
-  while(!callCommand(F("AT"), _10s)); 
-  while(!callCommand(F("AT+NRB"), _15s));
-  while(!callCommand(F("AT+CFUN=1"), _15s));
-  while(!callCommand(F("AT+CGSN=1"), _5s, 5, this->deviceInfo.imei));
-  while(!callCommand(F("AT+CGMR"), _5s, 5, this->deviceInfo.firmware));
-  while(!callCommand(F("AT+CIMI"), _5s, 5, this->deviceInfo.imsi));
-  this->_user_onDeviceReady_cb(this->deviceInfo); 
+  debugPrintLn("Debug mode is ON");
+  while (!callCommand(F("AT"), _10s));
+  while (!callCommand(F("AT+NRB"), _15s));
+  _user_onDeviceReboot_cb();
+  while (!callCommand(F("AT+CFUN=1"), _15s));
+  while (!callCommand(F("AT+CGSN=1"), _5s, 5, this->deviceInfo.imei));
+  while (!callCommand(F("AT+CGMR"), _5s, 5, this->deviceInfo.firmware));
+  while (!callCommand(F("AT+CIMI"), _5s, 5, this->deviceInfo.imsi));
+  this->_user_onDeviceReady_cb(this->deviceInfo);
 }
+
+void CMMC_NB_IoT::loop() {
+  static char buf[40];
+  this->_loopTimer.every_ms(1000, []() { });
+  if (this->_deviceNeverConnected) {
+    this->_writeCommand(F("AT+CGATT?"), 10L, buf, 1);
+    bool nbNetworkConnected = String(buf).indexOf(F("+CGATT:1")) != -1;
+    if (nbNetworkConnected) {
+      this->_deviceNeverConnected = false;
+      this->_user_onConnected_cb();
+    }
+    else {
+      this->_user_onConnecting_cb();
+    }
+  }
+}
+
+
 
 Stream* CMMC_NB_IoT::getModemSerial() {
   return this->_modemSerial;
@@ -97,21 +102,21 @@ int CMMC_NB_IoT::createUdpSocket(String hostname, uint16_t port, UDPConfig confi
   char buffer[40];
   sprintf(buffer, "AT+NSOCR=DGRAM,17,%d,%d", port, config);
   if (callCommand(buffer, 10, 5, resBuffer)) {
-      if (!this->_socketsMap.contains(hashKey)) {
-        debugPrint("socket id=");
-        debugPrint(idx);
-        debugPrint(" has been created. len=");
-        debugPrintLn(this->_socketsMap.size());
-        this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this);
-      }
-      else {
-        debugPrint("existing socket id=");
-        debugPrintLn(hashKey);
-      } 
+    if (!this->_socketsMap.contains(hashKey)) {
+      debugPrint("socket id=");
+      debugPrint(idx);
+      debugPrint(" has been created. len=");
+      debugPrintLn(this->_socketsMap.size());
+      this->_socketsMap[hashKey] = new Udp(hostname, port, idx, this);
+    }
+    else {
+      debugPrint("existing socket id=");
+      debugPrintLn(hashKey);
+    }
   }
   else {
-      debugPrintLn("Create UDP Socket failed.\n");
-      idx = -1;
+    debugPrintLn("Create UDP Socket failed.\n");
+    idx = -1;
   }
   return idx;
 };
@@ -156,9 +161,6 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutS, char *outStr, bool
           String out = String(F(" (")) + String(millis() - startMs) + F("ms)");
           debugPrintLn(out.c_str());
         }
-        // else { 
-        //   debugPrintLn();
-        // }
         if (outStr != NULL) {
           strcpy(outStr, nbSerialBuffer.c_str());
         }
@@ -169,7 +171,7 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutS, char *outStr, bool
         reqSuccess = 0;
         break;
       }
-    }  
+    }
     if ((millis() > nextTimeout) ) {
       nextTimeout = + timeoutS;
       reqSuccess = 0;
@@ -179,7 +181,7 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutS, char *outStr, bool
       break;
     }
     else {
-        delay(10); 
+      delay(10);
     }
   }
   return reqSuccess;

@@ -1,3 +1,5 @@
+#define DEBUG
+
 #include <Arduino.h>
 #include <CMMC_NB_IoT.h> 
 #include <AltSoftSerial.h>
@@ -13,11 +15,12 @@ void setup()
   Serial2.setTimeout(4); 
   delay(10);
   Serial.println();
-  Serial.println(F("Starting application..."));
+  Serial.println(F("Starting Application..."));
+  Serial.println(F("Waiting Modem..."));
 
   nb.setDebugStream(&Serial); 
   nb.onDeviceReboot([]() {
-    Serial.println(F("[user] Device being rebooted."));
+    Serial.println(F("[user] Device rebooted."));
   });
 
   nb.onDeviceReady([](CMMC_NB_IoT::DeviceInfo device) {
@@ -28,12 +31,13 @@ void setup()
     Serial.println(device.firmware);
     Serial.print(F("# IMSI SIM-->  "));
     Serial.println(device.imsi);
-	// nb.activate();
+    Serial.println("Activating NB-IoT shield.");
+    nb.activate();
   });
 
   nb.onConnecting([]() {
 	  Serial.println("Connecting to NB-IoT...");
-	  delay(1000);
+    delay(500);
   });
 
   nb.onConnected([]() {
@@ -47,19 +51,19 @@ void setup()
     int sockId = nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::DISABLE_RECV);
     nb.createUdpSocket("159.89.205.216", 11222, UDPConfig::DISABLE_RECV);
     String _tmp = "";
-    while(1) {
-      _tmp += String(ct) + "-";
-      Serial.println(String("payload size = ") + _tmp.length()) + String("byte");
-      nb.sendMessage(_tmp); 
-      delay(2000);
-      ct++;
-    }
+    // while(1) {
+    //   _tmp += String(ct) + "-";
+    //   Serial.println(String("payload size = ") + _tmp.length()) + String("byte");
+    //   nb.sendMessage(_tmp); 
+    //   delay(2000);
+    //   ct++;
+    // }
   });
 
   nb.begin();
 }
 
 void loop()
-{
-
+{ 
+	nb.loop();
 }

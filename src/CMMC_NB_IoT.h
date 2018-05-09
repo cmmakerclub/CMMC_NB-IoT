@@ -4,6 +4,7 @@
 #define SERIAL_BUFFER_SIZE 256
 #include <Arduino.h>
 #include <HashMap.h> 
+#include "CMMC_Interval.hpp"
 
 typedef void (*voidCb_t)(void);
 
@@ -44,8 +45,11 @@ class CMMC_NB_IoT
     bool sendMessage(String msg, uint8_t socketId = 0); 
     bool sendMessage(uint8_t *msg, size_t len, uint8_t socketId = 0); 
     bool callCommand(String at, uint8_t timeout = 10, int retries = 5, char *outStr = NULL);
+    void loop();
 
   private:
+    CMMC_Interval _loopTimer;
+    bool _deviceNeverConnected;
     Stream* _diagStream;
     bool _disableDiag; 
     DeviceInfo deviceInfo;
@@ -80,12 +84,8 @@ class CMMC_NB_IoT
           while (len--) {
             uint8_t b = *(payload++);
             sprintf(t, "%02x", b);
-            // Serial.print(t);
-            // Serial.print("-");
             this->_modemSerial->write(t, 2);
-          }
-          // Serial.println();
-
+          } 
           this->_modemSerial->write('\r');
           String nbSerialBuffer = "@";
           int ct = 0;
@@ -104,7 +104,6 @@ class CMMC_NB_IoT
               ct++;
               if (ct > 50) {
                 return false;
-                break;
               }
               delay(100);
             }
