@@ -51,7 +51,7 @@ void setup()
     String _tmp = "";
     while(1) {
       _tmp += String(ct) + "-";
-      Serial.print(String("payload size = ") + _tmp.length()) + String("byte");
+      Serial.println(String("payload size = ") + _tmp.length()) + String("byte");
       nb.sendMessage(_tmp); 
       delay(2000);
       ct++;

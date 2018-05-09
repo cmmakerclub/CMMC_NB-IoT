@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include <CMMC_NB_IoT.h>
-#include <SoftwareSerial.h>
+// #include <SoftwareSerial.h>
 
 #define RX 12
 #define TX 14
 
 
-SoftwareSerial swSerial(RX, TX, false);
+// SoftwareSerial modem(RX, TX, false); 
+Stream *modem = 0;
 
 void setup()
 { 
@@ -14,11 +15,13 @@ void setup()
   digitalWrite(15, HIGH);
   delay(100);
   Serial.begin(57600);
-  swSerial.begin(9600);
+  Serial2.begin(9600);
+
+  modem = &Serial2;
   Serial.println();
   Serial.println("Chiang Mai Maker Club's AT-Bridge engine is started."); 
   Serial.setTimeout(2);
-  swSerial.setTimeout(6);
+  modem->setTimeout(6);
 }
 
 String input;
@@ -39,13 +42,17 @@ void loop()
         Serial.println("HEX MODE DISABLED.");
         hexMode = 0; 
     }
-    swSerial.write(input.c_str(), input.length());
+    modem->write(input.c_str(), input.length());
+
     delay(2);
-    swSerial.write('\r');
+    modem->write('\r');
+
   }
 
-  if (swSerial.available() > 0)  {
-      String response = swSerial.readString(); 
+  if (modem->available() > 0)  {
+
+      String response = modem->readString(); 
+
       if (hexMode == 1) { 
         static char buf[3];
         Serial.print("+");

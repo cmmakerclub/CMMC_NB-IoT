@@ -6,8 +6,14 @@
 #warning "Debug mode is ON"
 #else
 #define debugPrintLn(...)
-#define debugPrint(...)
+#define debugPrint(...) 
 #endif
+
+#define _5s 5
+#define _10s 10
+#define _15s 15
+#define _20s 20
+
 CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
   this->_modemSerial = s;
   this->_user_onDeviceReboot_cb = [](void) -> void { };
@@ -24,7 +30,6 @@ CMMC_NB_IoT::~CMMC_NB_IoT() {
 bool CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *outStr) {
   int r = 0;
   int ok = false;
-  Serial.println(at);
   while (r < retries) {
     if (this->_writeCommand(at.c_str(), timeout, outStr) == 1) {
       ok = true;
@@ -32,7 +37,9 @@ bool CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *out
     }
     else {
       r++;
-      Serial.printf("%s[%d]\n", at.c_str(), r+1); 
+      Serial.print(at.c_str());
+      Serial.println();
+      // Serial.printf("%s[%d]\n", at.c_str(), r+1); 
       delay(500);
     }
     delay(50);
@@ -41,19 +48,18 @@ bool CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *out
 }
 
 void CMMC_NB_IoT::begin(Stream *s) {
-  Serial.println("BEGIN...");
   if (s != 0) {
     this->_modemSerial = s;
   }
-
-  callCommand(F("AT"), 10);
-  callCommand(F("AT+NRB"), 15);
-  callCommand(F("AT+CFUN=1"), 15);
-  callCommand(F("AT+CGSN=1"), 10, 5, this->deviceInfo.imei);
-  callCommand(F("AT+CGMR"), 10, 5, this->deviceInfo.firmware);
-  callCommand(F("AT+CIMI"), 10, 5, this->deviceInfo.imsi);
+  debugPrintLn("Debug mode is ON"); 
+  while(!callCommand(F("AT"), _10s)); 
+  while(!callCommand(F("AT+NRB"), _15s));
+  while(!callCommand(F("AT+CFUN=1"), _15s));
+  while(!callCommand(F("AT+CGSN=1"), _5s, 5, this->deviceInfo.imei));
+  while(!callCommand(F("AT+CGMR"), _5s, 5, this->deviceInfo.firmware));
+  while(!callCommand(F("AT+CIMI"), _5s, 5, this->deviceInfo.imsi));
   this->_user_onDeviceReady_cb(this->deviceInfo);
-  callCommand(F("AT+CGATT=1"), 10, 100);
+  while(!callCommand(F("AT+CGATT=1"), _10s, 100));
   char buf[40];
   bool nbNetworkConnected = false;
   while (!nbNetworkConnected) {
@@ -124,15 +130,15 @@ void CMMC_NB_IoT::onDeviceReboot(voidCb_t cb) {
   this->_user_onDeviceReboot_cb = cb;
 }
 
-bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *outStr, bool silent) {
-  timeoutMs *= 1000L;
-  uint32_t startMs = millis();
-  uint32_t nextTimeout = startMs + timeoutMs;
-  bool reqSuccess = 0;
+bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutS, char *outStr, bool silent) {
   at.trim();
+  timeoutS *= 1000L;
+  uint32_t startMs = millis();
+  uint32_t nextTimeout = startMs + timeoutS;
+  bool reqSuccess = 0;
   if (!silent) {
-    Serial.print(">> ");
-    Serial.println(at.c_str());
+    debugPrint(">> ");
+    debugPrintLn(at.c_str());
     // USER_DEBUG_PRINTF(">> %s", at.c_str());
   }
   // this->_modemSerial->print(at.c_str());
@@ -144,14 +150,16 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *outStr, boo
       String response = this->_modemSerial->readStringUntil('\n');
       response.trim();
       nbSerialBuffer += response;
-      Serial.print("RESP: ");
-      Serial.println(response.c_str());
-      // USER_DEBUG_PRINTF("RESP: %s\n", response.c_str());
+      // debugPrint("+++");
+      // debugPrint(response.c_str());
       if (response.indexOf(F("OK")) != -1) {
         if (!silent) {
           String out = String(F(" (")) + String(millis() - startMs) + F("ms)");
-          Serial.println(out.c_str());
+          debugPrintLn(out.c_str());
           // USER_DEBUG_PRINTF("%s\n", out.c_str());
+        }
+        else { 
+          debugPrintLn();
         }
         if (outStr != NULL) {
           strcpy(outStr, nbSerialBuffer.c_str());
@@ -166,9 +174,9 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutMs, char *outStr, boo
       }
     }  // serial not available
     if ((millis() > nextTimeout) ) {
-      nextTimeout = + timeoutMs;
+      nextTimeout = + timeoutS;
       reqSuccess = 0;
-      Serial.println("Wait timeout...");
+      debugPrintLn("Wait timeout.");
       // USER_DEBUG_PRINTF("\n%s .. wait timeout wit resp: ", at.c_str());
       // USER_DEBUG_PRINTF("%s\n", nbSerialBuffer.c_str());
       nbSerialBuffer = "@";
