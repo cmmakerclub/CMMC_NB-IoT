@@ -25,7 +25,7 @@
       });
 
       nb.onConnected([]() {
-        Serial.println("[user] NB-IoT Networ connected");
+        Serial.println("[user] NB-IoT Network connected");
       });
 
 
