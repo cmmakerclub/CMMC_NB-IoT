@@ -14,10 +14,13 @@ onDeviceReboot	KEYWORD2
 onConnecting	KEYWORD2
 onConnected		KEYWORD2
 init			KEYWORD2
+loop			KEYWORD2
+begin			KEYWORD2
 
 #######################################
 # Instances (KEYWORD2)
 #######################################
+Bridge			KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
