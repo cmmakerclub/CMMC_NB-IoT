@@ -7,7 +7,6 @@ platformio lib -g install 73 # altsoftserial
 # 	platformio ci --project-option="lib_ldf_mode=2" $EXAMPLE -l '.' -b $BOARD
 # done 
 
-platformio ci --project-option="lib_ldf_mode=2" --lib="." --board=uno --board=megaatmega2560 "examples/AT-Bridge"
-platformio ci --project-option="lib_ldf_mode=2" --lib="." --board=uno --board=megaatmega2560 "examples/altsoftserial_example"
-platformio ci --project-option="lib_ldf_mode=2" --lib="." --board=megaatmega2560 "examples/hwserial_example"
+platformio ci --project-option="lib_ldf_mode=2" --lib="." --board=uno --board=uno "examples/AT-Bridge_uno"
+platformio ci --project-option="lib_ldf_mode=2" --lib="." --board=uno --board=megaatmega2560 "examples/AT-brdige_hardware_serial"
 

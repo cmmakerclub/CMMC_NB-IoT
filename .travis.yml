@@ -5,9 +5,9 @@ python:
     - "2.7"
 
 env:
-    - PLATFORMIO_CI_SRC=examples/AT-bridge
+    - PLATFORMIO_CI_SRC=examples/AT-bridge_uno
+    - PLATFORMIO_CI_SRC=examples/AT-bridge_hardware_serial
     - PLATFORMIO_CI_SRC=examples/hwserial_example
-    - PLATFORMIO_CI_SRC=examples/altsoftserial_example
 
 install:
     - pip install -U platformio
