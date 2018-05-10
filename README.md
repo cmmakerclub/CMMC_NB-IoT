@@ -28,21 +28,14 @@
         Serial.println("[user] NB-IoT Networ connected");
       });
 
-      nb.onDebugMsg([](const char* msg) {
-        // Serial.print(msg);
-      });
 
       nb.begin();
     }
 
     void loop()
     {
-
+      nb.loop();
     }
-
-[Example Code](https://github.com/cmmakerclub/CMMC_NB-IoT/blob/master/examples/example1/example1.ino)
-
-
 
 ## Dependencies
  - https://github.com/PaulStoffregen/AltSoftSerial
