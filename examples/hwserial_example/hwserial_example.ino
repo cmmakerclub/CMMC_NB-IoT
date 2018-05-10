@@ -43,22 +43,6 @@ void setup()
 
   nb.onConnected([]() {
     Serial.println("[user] NB-IoT Network connected");
-    char tmp[400];
-    nb._writeCommand(F("AT+CSQ"), 10L, tmp);  // imsi sim
-    String t = String(tmp);
-    t.replace("OK", " - OK");
-    Serial.println(t);
-    int ct = 1;
-    int sockId = nb.createUdpSocket("159.89.205.216", 11221, UDPConfig::DISABLE_RECV);
-    nb.createUdpSocket("159.89.205.216", 11222, UDPConfig::DISABLE_RECV);
-    String _tmp = "";
-    // while(1) {
-    //   _tmp += String(ct) + "-";
-    //   Serial.println(String("payload size = ") + _tmp.length()) + String("byte");
-    //   nb.sendMessage(_tmp); 
-    //   delay(2000);
-    //   ct++;
-    // }
   });
 
   nb.begin();
