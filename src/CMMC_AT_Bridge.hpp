@@ -6,32 +6,45 @@ class CMMC_AT_Bridge
 {
   public:
     void init(Stream *input, Stream* modem) {
-        this->modem = modem;
-        this->userSerial = input; 
+      this->modem = modem;
+      this->userSerial = input;
 
-        this->userSerial->setTimeout(2);
-        this->modem->setTimeout(2);
+      this->userSerial->setTimeout(2);
+      this->modem->setTimeout(2);
     }
 
     void processUserCommand() {
       if (userSerial->available()) {
-        userSerial->print(">> ");
         input = userSerial->readString();
         input.trim();
         input.toUpperCase();
-        userSerial->println(input);
+        if (echoMode) {
+          userSerial->print(">> ");
+          userSerial->println(input);
+        }
         if (input == "HEX") {
-          userSerial->println("HEX MODE ENABLED.");
-          hexMode = 1;
+          hexMode = !hexMode;
+          if (hexMode) {
+            userSerial->println("HEX MODE ENABLED.");
+          }
+          else {
+            userSerial->println("HEX MODE DISABLED.");
+          }
         }
-        else if (input == "ASCII") {
-          userSerial->println("HEX MODE DISABLED.");
-          hexMode = 0;
+        else if (input == "ECHO") {
+          echoMode = !echoMode;
+          if (echoMode) {
+            userSerial->println("ECHO MODE ENABLED.");
+          }
+          else {
+            userSerial->println("ECHO MODE DISABLED.");
+          }
         }
-
-        modem->write(input.c_str(), input.length());
-        delay(2);
-        modem->write('\r');
+        else {
+          modem->write(input.c_str(), input.length());
+          delay(2);
+          modem->write('\r');
+        }
       }
     }
 
@@ -52,15 +65,15 @@ class CMMC_AT_Bridge
 
 
     void loop() {
-        processUserCommand();
-        listenModemResponse();
+      processUserCommand();
+      listenModemResponse();
     }
   private:
     Stream *modem = NULL;
     Stream *userSerial = NULL;
     String input;
     uint8_t hexMode = 0;
-
+    bool echoMode = false;
 };
 
 #endif
