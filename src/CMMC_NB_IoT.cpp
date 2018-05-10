@@ -9,10 +9,8 @@
 #define debugPrint(...)
 #endif
 
-#define _5s 5
-#define _10s 10
-#define _15s 15
-#define _20s 20
+#define TIMEOUT_5s 5
+#define TIMEOUT_10s 10
 
 CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
   this->_modemSerial = s;
@@ -47,21 +45,22 @@ bool CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *out
 }
 
 void CMMC_NB_IoT::activate() {
-  while (!callCommand(F("AT+CGATT=1"), _10s, 100));
+  while (!callCommand(F("AT+CGATT=1"), TIMEOUT_10s, 100));
 }
 
-void CMMC_NB_IoT::begin(Stream *s) {
+void CMMC_NB_IoT::begin(Stream *s, uint8_t timeout) {
   if (s != 0) {
     this->_modemSerial = s;
-  }
+  } 
+  s->setTimeout(timeout);
   debugPrintLn("Debug mode is ON");
-  while (!callCommand(F("AT"), _10s));
-  while (!callCommand(F("AT+NRB"), _15s));
+  while (!callCommand(F("AT"), TIMEOUT_10s));
+  while (!callCommand(F("AT+NRB"), TIMEOUT_10s));
   _user_onDeviceReboot_cb();
-  while (!callCommand(F("AT+CFUN=1"), _15s));
-  while (!callCommand(F("AT+CGSN=1"), _5s, 5, this->deviceInfo.imei));
-  while (!callCommand(F("AT+CGMR"), _5s, 5, this->deviceInfo.firmware));
-  while (!callCommand(F("AT+CIMI"), _5s, 5, this->deviceInfo.imsi));
+  while (!callCommand(F("AT+CFUN=1"), TIMEOUT_10s));
+  while (!callCommand(F("AT+CGSN=1"), TIMEOUT_5s, 5, this->deviceInfo.imei));
+  while (!callCommand(F("AT+CGMR"), TIMEOUT_5s, 5, this->deviceInfo.firmware));
+  while (!callCommand(F("AT+CIMI"), TIMEOUT_5s, 5, this->deviceInfo.imsi));
   this->_user_onDeviceReady_cb(this->deviceInfo);
 }
 
@@ -79,9 +78,7 @@ void CMMC_NB_IoT::loop() {
       this->_user_onConnecting_cb();
     }
   }
-}
-
-
+} 
 
 Stream* CMMC_NB_IoT::getModemSerial() {
   return this->_modemSerial;

@@ -5,6 +5,7 @@
 #include <Arduino.h>
 #include <HashMap.h> 
 #include "CMMC_Interval.hpp"
+#include "CMMC_AT_Bridge.hpp"
 
 typedef void (*voidCb_t)(void);
 
@@ -20,6 +21,7 @@ class Udp;
 class CMMC_NB_IoT
 {
   public:
+    CMMC_AT_Bridge Bridge;
     CMMC_NB_IoT(Stream *s);
 
     typedef struct {
@@ -32,7 +34,7 @@ class CMMC_NB_IoT
 
     typedef void(*deviceInfoCb_t)(DeviceInfo);
     ~CMMC_NB_IoT();
-    void begin(Stream *s = 0);
+    void begin(Stream *s = 0, uint8_t timeout = 6);
     void onDeviceReady(deviceInfoCb_t cb);
     void onConnecting(voidCb_t cb);
     void onConnected(voidCb_t cb);

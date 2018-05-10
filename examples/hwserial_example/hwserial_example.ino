@@ -19,6 +19,7 @@ void setup()
   Serial.println(F("Waiting Modem..."));
 
   nb.setDebugStream(&Serial); 
+
   nb.onDeviceReboot([]() {
     Serial.println(F("[user] Device rebooted."));
   });
