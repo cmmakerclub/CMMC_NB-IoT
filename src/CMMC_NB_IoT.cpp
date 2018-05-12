@@ -18,6 +18,7 @@ CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
   this->_user_onConnecting_cb = [](void) -> void { };
   this->_user_onConnected_cb = [](void) -> void { };
   this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
+  this->_user_onResponse_cb = [](UDPReceive d) -> void { };
   this->_socketsMap = HashMap<String, Udp*, HASH_SIZE>();
   this->_deviceNeverConnected = true;
 };
@@ -78,7 +79,59 @@ void CMMC_NB_IoT::loop() {
       this->_user_onConnecting_cb();
     }
   }
+  else
+  {
+    char responseBuf[255];
+    this->_writeCommandRaw(F("AT+NSORF=0,100"), 1, responseBuf, 1);
+    String response = String(responseBuf);
+    // Serial.print("[DATE]");Serial.println(response);
+    if(String(responseBuf).indexOf(F("+NSONMI:"))!=-1)
+    {
+      this->_writeCommandRaw(F("AT+NSORF=0,100"), 1, responseBuf, 1);
+      response = String(responseBuf);
+    }
+    if(response.indexOf(F(","))!=-1)
+    {
+      int index1 = response.indexOf(F(","));
+      int index2 = response.indexOf(F(","),index1+1);
+      int index3 = response.indexOf(F(","),index2+1);
+      int index4 = response.indexOf(F(","),index3+1);
+      int index5 = response.indexOf(F(","),index4+1);
+      int index6 = response.indexOf(F("\r"));
+
+      this->_UDPReceive.socket = response.substring(0,index1).toInt();
+      this->_UDPReceive.ip_address = response.substring(index1+1,index2);
+      this->_UDPReceive.port = response.substring(index2+1,index3).toInt();
+      this->_UDPReceive.length = response.substring(index3+1,index4).toInt();
+      this->_UDPReceive.data=this->toString(response.substring(index4+1,index5));
+      this->_UDPReceive.remaining_length = response.substring(index5+1,index6).toInt();
+      this->_user_onResponse_cb(this->_UDPReceive);
+    }
+  }
 } 
+
+String CMMC_NB_IoT:: toString(String dat)
+{
+  String str="";
+  for(int x=0;x<dat.length();x+=2)
+  {
+      char c =  char_to_byte(dat[x])<<4 | char_to_byte(dat[x+1]);
+    str += c;
+  }
+  return(str);
+}
+
+char CMMC_NB_IoT:: char_to_byte(char c)
+{
+  if((c>='0')&&(c<='9'))
+  {
+    return(c-0x30);
+  }
+  if((c>='A')&&(c<='F'))
+  {
+    return(c-55);
+  }
+}
 
 Stream* CMMC_NB_IoT::getModemSerial() {
   return this->_modemSerial;
@@ -134,6 +187,10 @@ void CMMC_NB_IoT::onDeviceReboot(voidCb_t cb) {
   this->_user_onDeviceReboot_cb = cb;
 }
 
+void CMMC_NB_IoT::onResponse(responseCb_t cb) { //add
+  this->_user_onResponse_cb = cb;
+}
+
 bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutS, char *outStr, bool silent) {
   at.trim();
   timeoutS *= 1000L;
@@ -184,3 +241,53 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutS, char *outStr, bool
   return reqSuccess;
 }
 
+bool CMMC_NB_IoT::_writeCommandRaw(String at, uint32_t timeoutS, char *outStr, bool silent) {
+  at.trim();
+  timeoutS *= 1000L;
+  uint32_t startMs = millis();
+  uint32_t nextTimeout = startMs + timeoutS;
+  bool reqSuccess = 0;
+  if (!silent) {
+    debugPrint(">> ");
+    debugPrint(at.c_str());
+  }
+  // this->_modemSerial->print(at.c_str());
+  this->_modemSerial->write(at.c_str(), at.length());
+  this->_modemSerial->write('\r');
+  String nbSerialBuffer = "";
+  while (1) {
+    if (this->_modemSerial->available()) {
+      String response = this->_modemSerial->readStringUntil('\n');
+      response.trim();
+      // Serial.print("[response]");Serial.println(response);
+      nbSerialBuffer += response;
+      if (response.length()>10 && response.indexOf(F(",")) != -1) {
+        if (!silent) {
+          String out = String(F(" (")) + String(millis() - startMs) + F("ms)");
+          debugPrintLn(out.c_str());
+        }
+        if (outStr != NULL) {
+          strcpy(outStr, response.c_str());
+        }
+        reqSuccess = 1;
+        break;
+      }
+      else if (response.indexOf(F("ERROR")) != -1) {
+        reqSuccess = 0;
+        break;
+      }
+    }
+    if ((millis() > nextTimeout) ) {
+      nextTimeout = + timeoutS;
+      reqSuccess = 0;
+      debugPrintLn("Wait timeout..");
+      debugPrintLn(nbSerialBuffer.c_str());
+      nbSerialBuffer = "@";
+      break;
+    }
+    else {
+      delay(10);
+    }
+  }
+  return reqSuccess;
+}
