@@ -27,6 +27,15 @@
       nb.onConnected([]() {
         Serial.println("[user] NB-IoT Network connected");
       });
+      
+      nb.onResponse([](CMMC_NB_IoT::UDPReceive resp){
+        Serial.print("socket : ");Serial.println(resp.socket);
+        Serial.print("ip_address : ");Serial.println(resp.ip_address);
+        Serial.print("port : ");Serial.println(resp.port);
+        Serial.print("length : ");Serial.println(resp.length);
+        Serial.print("data : ");Serial.println(resp.data);
+        Serial.print("remaining_length : ");Serial.println(resp.remaining_length);
+      });
 
 
       nb.begin();
