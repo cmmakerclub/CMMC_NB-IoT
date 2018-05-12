@@ -105,6 +105,8 @@ void CMMC_NB_IoT::loop() {
       this->_UDPReceive.length = response.substring(index3+1,index4).toInt();
       this->_UDPReceive.data=this->toString(response.substring(index4+1,index5));
       this->_UDPReceive.remaining_length = response.substring(index5+1,index6).toInt();
+      responseBuf[0]='\0';
+      response = F("");
       this->_user_onResponse_cb(this->_UDPReceive);
     }
   }
