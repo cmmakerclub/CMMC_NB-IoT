@@ -29,12 +29,18 @@
       });
       
       nb.onResponse([](CMMC_NB_IoT::UDPReceive resp){
-        Serial.print("socket : ");Serial.println(resp.socket);
-        Serial.print("ip_address : ");Serial.println(resp.ip_address);
-        Serial.print("port : ");Serial.println(resp.port);
-        Serial.print("length : ");Serial.println(resp.length);
-        Serial.print("data : ");Serial.println(resp.data);
-        Serial.print("remaining_length : ");Serial.println(resp.remaining_length);
+        Serial.println("socket : ");
+        Serial.print(resp.socket);
+        Serial.println("ip_address : ");
+        Serial.print(resp.ip_address);
+        Serial.println("port : ");
+        Serial.print(resp.port);
+        Serial.println("length : ");
+        Serial.print(resp.length);
+        Serial.println("data : ");
+        Serial.print(resp.data);
+        Serial.println("remaining_length : ");
+        Serial.print(resp.remaining_length);
       });
 
 
