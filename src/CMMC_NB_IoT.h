@@ -1,6 +1,7 @@
 #ifndef CMMC_NB_IoT_H
 #define CMMC_NB_IoT_H
 
+#define DEBUG
 #define SERIAL_BUFFER_SIZE 256
 #include <Arduino.h>
 #include <HashMap.h> 
@@ -35,7 +36,8 @@ class CMMC_NB_IoT
     typedef void(*deviceInfoCb_t)(DeviceInfo);
     ~CMMC_NB_IoT();
     void begin(Stream *s = 0, uint8_t timeout = 5);
-    void onDeviceReady(deviceInfoCb_t cb);
+    void onDeviceInfo(deviceInfoCb_t cb);
+    void onDeviceReady(voidCb_t cb);
     void onConnecting(voidCb_t cb);
     void onConnected(voidCb_t cb);
     void onDeviceReboot(voidCb_t cb);
@@ -47,6 +49,9 @@ class CMMC_NB_IoT
     bool sendMessage(String msg, uint8_t socketId = 0); 
     bool sendMessage(uint8_t *msg, size_t len, uint8_t socketId = 0); 
     bool callCommand(String at, uint8_t timeout = 10, int retries = 5, char *outStr = NULL);
+    bool setPhoneFunctionality(unsigned int fun);
+    void queryDeviceInfo();
+    void rebootModule();
     void loop();
 
   private:
@@ -55,7 +60,8 @@ class CMMC_NB_IoT
     Stream* _diagStream;
     bool _disableDiag; 
     DeviceInfo deviceInfo;
-    deviceInfoCb_t _user_onDeviceReady_cb;
+    deviceInfoCb_t _user_onDeviceInfo_cb;
+    voidCb_t _user_onDeviceReady_cb;
     voidCb_t _user_onDeviceReboot_cb;
     voidCb_t _user_onConnecting_cb;
     voidCb_t _user_onConnected_cb;
@@ -119,7 +125,7 @@ class CMMC_NB_IoT
         Stream *_modemSerial;
         String _host;
         uint16_t _port;
-        uint8_t _socketId;
+        uint8_t _socketId; 
     };
 
 #endif //CMMC_NB_IoT_H

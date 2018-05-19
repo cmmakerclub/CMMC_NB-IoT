@@ -228,7 +228,7 @@ class HashMap
     K keys[capacity];
     V values[capacity];
     V nil;
-    int currentIndex;
+    long currentIndex;
     comparator cb_comparator;
 };
 

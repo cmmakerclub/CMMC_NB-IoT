@@ -11,13 +11,15 @@
 
 #define TIMEOUT_5s 5
 #define TIMEOUT_10s 10
+#define SILENT 1
 
 CMMC_NB_IoT::CMMC_NB_IoT(Stream *s) {
   this->_modemSerial = s;
   this->_user_onDeviceReboot_cb = [](void) -> void { };
   this->_user_onConnecting_cb = [](void) -> void { };
   this->_user_onConnected_cb = [](void) -> void { };
-  this->_user_onDeviceReady_cb = [](DeviceInfo d) -> void { };
+  this->_user_onDeviceReady_cb = [](void) -> void { };
+  this->_user_onDeviceInfo_cb = [](DeviceInfo d) -> void { };
   this->_socketsMap = HashMap<String, Udp*, HASH_SIZE>();
   this->_deviceNeverConnected = true;
 };
@@ -29,23 +31,41 @@ CMMC_NB_IoT::~CMMC_NB_IoT() {
 bool CMMC_NB_IoT::callCommand(String at, uint8_t timeout, int retries, char *outStr) {
   int r = 0;
   int ok = false;
+
   while (r < retries && !ok) {
     if (this->_writeCommand(at.c_str(), timeout, outStr) == 1) {
       ok = true;
     }
     else {
       r++;
-      debugPrintLn(at.c_str());
-      delay(500);
+      delay(300);
     }
     delay(50);
   }
-  delay(100);
   return ok;
 }
 
 void CMMC_NB_IoT::activate() {
   while (!callCommand(F("AT+CGATT=1"), TIMEOUT_10s, 100));
+}
+
+void CMMC_NB_IoT::rebootModule() {
+  while (!callCommand(F("AT+NRB"), TIMEOUT_10s));
+  _user_onDeviceReboot_cb(); 
+}
+
+bool CMMC_NB_IoT::setPhoneFunctionality(unsigned int fun) { 
+   char buf[12] = {0};
+   memset(buf, 0, sizeof(buf));
+   sprintf(buf, "AT+CFUN=%u", fun);
+   return callCommand(buf, TIMEOUT_5s, 5);
+}
+
+void CMMC_NB_IoT::queryDeviceInfo() {
+  while (!callCommand(F("AT+CGSN=1"), TIMEOUT_5s, 5, this->deviceInfo.imei));
+  while (!callCommand(F("AT+CGMR"), TIMEOUT_5s, 5, this->deviceInfo.firmware));
+  while (!callCommand(F("AT+CIMI"), TIMEOUT_5s, 5, this->deviceInfo.imsi));
+  this->_user_onDeviceInfo_cb(this->deviceInfo);
 }
 
 void CMMC_NB_IoT::begin(Stream *s, uint8_t timeout) {
@@ -55,21 +75,16 @@ void CMMC_NB_IoT::begin(Stream *s, uint8_t timeout) {
   s->setTimeout(timeout);
   debugPrintLn("Debug mode is ON");
   while (!callCommand(F("AT"), TIMEOUT_10s));
-  while (!callCommand(F("AT+NRB"), TIMEOUT_10s));
-  _user_onDeviceReboot_cb();
-  while (!callCommand(F("AT+CFUN=1"), TIMEOUT_10s));
-  while (!callCommand(F("AT+CGSN=1"), TIMEOUT_5s, 5, this->deviceInfo.imei));
-  while (!callCommand(F("AT+CGMR"), TIMEOUT_5s, 5, this->deviceInfo.firmware));
-  while (!callCommand(F("AT+CIMI"), TIMEOUT_5s, 5, this->deviceInfo.imsi));
-  this->_user_onDeviceReady_cb(this->deviceInfo);
+  this->_user_onDeviceReady_cb();
 }
 
 void CMMC_NB_IoT::loop() {
   static char buf[40];
   this->_loopTimer.every_ms(1000, []() { });
   if (this->_deviceNeverConnected) {
-    this->_writeCommand(F("AT+CGATT?"), 10L, buf, 1);
-    bool nbNetworkConnected = String(buf).indexOf(F("+CGATT:1")) != -1;
+    this->_writeCommand(F("AT+CGATT?"), 10L, buf);
+    unsigned int nbNetworkConnected;
+    sscanf(buf, "+CGATT:%u", &nbNetworkConnected);
     if (nbNetworkConnected) {
       this->_deviceNeverConnected = false;
       this->_user_onConnected_cb();
@@ -118,8 +133,12 @@ int CMMC_NB_IoT::createUdpSocket(String hostname, uint16_t port, UDPConfig confi
   return idx;
 };
 
-void CMMC_NB_IoT::onDeviceReady(deviceInfoCb_t cb) {
+void CMMC_NB_IoT::onDeviceReady(voidCb_t cb) {
   this->_user_onDeviceReady_cb = cb;
+}
+
+void CMMC_NB_IoT::onDeviceInfo(deviceInfoCb_t cb) {
+  this->_user_onDeviceInfo_cb = cb;
 }
 
 void CMMC_NB_IoT::onConnecting(voidCb_t cb) {
@@ -136,18 +155,16 @@ void CMMC_NB_IoT::onDeviceReboot(voidCb_t cb) {
 
 bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutS, char *outStr, bool silent) {
   at.trim();
-  timeoutS *= 1000L;
   uint32_t startMs = millis();
-  uint32_t nextTimeout = startMs + timeoutS;
+  uint32_t nextTimeout = startMs + (timeoutS*1000L);
   bool reqSuccess = 0;
   if (!silent) {
     debugPrint(">> ");
     debugPrint(at.c_str());
   }
-  // this->_modemSerial->print(at.c_str());
   this->_modemSerial->write(at.c_str(), at.length());
   this->_modemSerial->write('\r');
-  String nbSerialBuffer = "@";
+  String nbSerialBuffer = "";
   while (1) {
     if (this->_modemSerial->available()) {
       String response = this->_modemSerial->readStringUntil('\n');
@@ -155,8 +172,9 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutS, char *outStr, bool
       nbSerialBuffer += response;
       if (response.indexOf(F("OK")) != -1) {
         if (!silent) {
-          String out = String(F(" (")) + String(millis() - startMs) + F("ms)");
-          debugPrintLn(out.c_str());
+          static char timeTextBuffer[12]; // ex: (10000ms)
+          sprintf(timeTextBuffer, " (%lums)", millis() - startMs);
+          debugPrintLn(timeTextBuffer);
         }
         if (outStr != NULL) {
           strcpy(outStr, nbSerialBuffer.c_str());
@@ -165,12 +183,13 @@ bool CMMC_NB_IoT::_writeCommand(String at, uint32_t timeoutS, char *outStr, bool
         break;
       }
       else if (response.indexOf(F("ERROR")) != -1) {
+        debugPrintLn(" ....");
         reqSuccess = 0;
         break;
       }
     }
     if ((millis() > nextTimeout) ) {
-      nextTimeout = + timeoutS;
+      nextTimeout += timeoutS;
       reqSuccess = 0;
       debugPrintLn("Wait timeout..");
       debugPrintLn(nbSerialBuffer.c_str());
